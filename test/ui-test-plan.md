@@ -174,6 +174,7 @@ Now you have 3 tasks in the list.
 Noted. I've removed this task:
   [T][ ] second task
 Now you have 2 tasks in the list.
+Here are the tasks in your list:
 1.[T][ ] first task
 2.[T][ ] third task
 Bye. Hope to see you again soon!
@@ -437,6 +438,7 @@ Now you have 2 tasks in the list.
 Got it. I've added this task:
   [E][ ] meeting (from: 2pm to: 4pm)
 Now you have 3 tasks in the list.
+Here are the tasks in your list:
 1.[T][ ] borrow book
 2.[D][ ] return book (by: Sunday)
 3.[E][ ] meeting (from: 2pm to: 4pm)
@@ -466,6 +468,7 @@ Got it. I've added this task:
 Now you have 1 tasks in the list.
 Nice! I've marked this task as done:
   [T][X] borrow book
+Here are the tasks in your list:
 1.[T][X] borrow book
 Bye. Hope to see you again soon!
 ```
@@ -682,6 +685,7 @@ Nice! I've marked this task as done:
   [T][X] borrow book
 Okay, I've unmarked this task as not done yet:
   [T][ ] borrow book
+Here are the tasks in your list:
 1.[T][ ] borrow book
 Bye. Hope to see you again soon!
 ```
