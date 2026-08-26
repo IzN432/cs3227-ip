@@ -1,3 +1,5 @@
+import java.util.Scanner;
+
 /**
  * Starts the Ekko chatbot application.
  */
@@ -9,8 +11,29 @@ public class Ekko {
         instance.printBanner();
         instance.sendMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", instance.getName()));
         instance.printSeparator();
+
+        String input = instance.getInput();
+        instance.printSeparator();
+        while (!input.equals("bye")) {
+            instance.sendMessage(input);
+            instance.printSeparator();
+            input = instance.getInput();
+            instance.printSeparator();
+        }
         instance.sendMessage("Bye. Hope to see you again soon!");
         instance.printSeparator();
+    }
+
+    private final Scanner scanner;
+
+    public Ekko() {
+        scanner = new Scanner(System.in);
+    }
+
+    public String getInput() {
+        String input = scanner.nextLine();
+        System.out.println();
+        return input;
     }
 
     public void printBanner() {
