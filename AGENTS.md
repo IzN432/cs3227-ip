@@ -9,8 +9,8 @@ Unless the user says otherwise, assume that you are assisting a student working 
 # Student profile
 
 * Prior knowledge: Basic Java and OOP concepts.
-* Level of programming experience: [to be filled]
-* IDE and level of expertise: [to be filled]
+* Level of programming experience: Intermediate
+* IDE and level of expertise: IntelliJ IDEA, intermediate
 
 # Guidance for interacting with users
 
@@ -30,6 +30,11 @@ Ensure that Java 25 is used when running the application or build tasks. On macO
 
 ## Git
 
+Follow the commit message and branch naming conventions at https://se-education.org/guides/conventions/git.html.
 Use lightweight tags unless the user requests an annotated tag.
 When proposing or creating a commit message, include enough detail to explain the rationale for the change.
 Do not commit or push unless explicitly asked.
+Develop changes on a feature branch rather than directly on the main branch.
+Before integrating a feature branch, rebase it onto the latest main branch to maintain a linear history.
+Avoid merge commits unless the user explicitly requests one.
+Do not force-push unless explicitly asked; when necessary, prefer `--force-with-lease` over `--force`.
