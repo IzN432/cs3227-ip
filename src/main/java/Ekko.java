@@ -13,34 +13,40 @@ public class Ekko {
     }
 
     private final Scanner scanner;
-    private final String[] tasks;
+    private final Task[] tasks;
     private int taskCount;
 
     public Ekko() {
         scanner = new Scanner(System.in);
-        tasks = new String[MAX_TASKS];
+        tasks = new Task[MAX_TASKS];
         taskCount = 0;
     }
 
     /**
      * Runs the chatbot until the user enters the {@code bye} command.
      */
-    private void mainLoop() {
+    public void mainLoop() {
         printSeparator();
         printBanner();
         sendMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", getName()));
         printSeparator();
 
         String input = getInput();
+        String[] command = input.split("\\s+");
         printSeparator();
-        while (!input.equals("bye")) {
-            if (input.equals("list")) {
+        while (!command[0].equals("bye")) {
+            if (command[0].equals("list")) {
                 printTasks();
+            } else if (command[0].equals("mark")) {
+                markTask(command);
+            } else if (command[0].equals("unmark")) {
+                unmarkTask(command);
             } else {
                 addTask(input);
             }
 
             input = getInput();
+            command = input.split("\\s+");
             printSeparator();
         }
         sendMessage("Bye. Hope to see you again soon!");
@@ -59,7 +65,7 @@ public class Ekko {
             printSeparator();
             return;
         }
-        tasks[taskCount] = task;
+        tasks[taskCount] = new Task(task);
         taskCount++;
         sendMessage(String.format("added: %s", task));
         printSeparator();
@@ -73,20 +79,74 @@ public class Ekko {
             sendMessage("No tasks found!");
         } else {
             for (int i = 0; i < taskCount; i++) {
-                System.out.printf("%d. %s\n", i + 1, tasks[i]);
+                System.out.printf("%d.%s\n", i + 1, tasks[i]);
             }
+            System.out.println();
         }
-        System.out.println();
         printSeparator();
     }
 
-    public String getInput() {
+    /**
+     * Marks the task identified by a mark command as complete.
+     * Displays an error message when the command does not contain a valid task number.
+     *
+     * @param command parsed command words, such as {@code ["mark", "1"]}
+     */
+    private void markTask(String[] command) {
+        if (command.length < 2) {
+            sendMessage("Please provide a task number.");
+        } else {
+            try {
+                int taskIndex = Integer.parseInt(command[1]) - 1;
+                if (taskIndex < 0 || taskIndex >= taskCount) {
+                    sendMessage("Please input a valid task number. You can send list to see how many tasks you have.");
+                } else if (tasks[taskIndex].isMarked()) {
+                    sendMessage("This task has already been marked as done:\n  " + tasks[taskIndex]);
+                } else {
+                    tasks[taskIndex].setMarked(true);
+                    sendMessage("Nice! I've marked this task as done:\n  " + tasks[taskIndex]);
+                }
+            } catch (NumberFormatException e) {
+                sendMessage("Please provide a valid task number.");
+            }
+        }
+        printSeparator();
+    }
+
+    /**
+     * Marks the task identified by an unmark command as incomplete.
+     * Displays an error message when the command does not contain a valid task number.
+     *
+     * @param command parsed command words, such as {@code ["unmark", "1"]}
+     */
+    private void unmarkTask(String[] command) {
+        if (command.length < 2) {
+            sendMessage("Please provide a task number.");
+        } else {
+            try {
+                int taskIndex = Integer.parseInt(command[1]) - 1;
+                if (taskIndex < 0 || taskIndex >= taskCount) {
+                    sendMessage("Please input a valid task number. You can send list to see how many tasks you have.");
+                } else if (!tasks[taskIndex].isMarked()) {
+                    sendMessage("This task has already been unmarked:\n  " + tasks[taskIndex]);
+                } else {
+                    tasks[taskIndex].setMarked(false);
+                    sendMessage("Okay, I've unmarked this task as not done yet:\n  " + tasks[taskIndex]);
+                }
+            } catch (NumberFormatException e) {
+                sendMessage("Please provide a valid task number.");
+            }
+        }
+        printSeparator();
+    }
+
+    private String getInput() {
         String input = scanner.nextLine();
         System.out.println();
         return input;
     }
 
-    public void printBanner() {
+    private void printBanner() {
         String banner = " _______  __  ___  __  ___   ______   \n"
                 + "|   ____||  |/  / |  |/  /  /  __  \\  \n"
                 + "|  |__   |  '  /  |  '  /  |  |  |  | \n"
@@ -96,16 +156,16 @@ public class Ekko {
         System.out.println(banner);
     }
 
-    public void sendMessage(String message) {
+    private void sendMessage(String message) {
         System.out.println(message);
         System.out.println();
     }
 
-    public void printSeparator() {
+    private void printSeparator() {
         System.out.println("─".repeat(80));
     }
 
-    public String getName() {
+    private String getName() {
         return "Ekko";
     }
 }
