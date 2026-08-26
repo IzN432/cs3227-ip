@@ -6,7 +6,7 @@ import java.util.Map;
  */
 public class ParsedArguments {
     private String description;
-    private final Map<String, String> arguments;
+    private final Map<ArgumentName, String> arguments;
 
     public ParsedArguments() {
         arguments = new HashMap<>();
@@ -16,11 +16,11 @@ public class ParsedArguments {
         this.description = description;
     }
 
-    public void setArgument(String argument, String value) {
+    public void setArgument(ArgumentName argument, String value) {
         arguments.put(argument, value);
     }
 
-    public boolean containsArgument(String argument) {
+    public boolean containsArgument(ArgumentName argument) {
         return arguments.containsKey(argument);
     }
 
@@ -28,7 +28,7 @@ public class ParsedArguments {
         return description;
     }
 
-    public String getArgument(String argument) {
+    public String getArgument(ArgumentName argument) {
         return arguments.getOrDefault(argument, "");
     }
 }

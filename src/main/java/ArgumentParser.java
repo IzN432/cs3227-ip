@@ -22,7 +22,7 @@ public final class ArgumentParser {
      * @param availableArguments argument names recognised by the command
      * @return the parsed description and argument values
      */
-    public static ParsedArguments parse(String argumentString, Set<String> availableArguments) {
+    public static ParsedArguments parse(String argumentString, Set<ArgumentName> availableArguments) {
         ParsedArguments parsedArguments = new ParsedArguments();
         if (availableArguments.isEmpty()) {
             parsedArguments.setDescription(argumentString.trim());
@@ -30,7 +30,10 @@ public final class ArgumentParser {
         }
 
         String allowedNames = availableArguments.stream()
-                .sorted(Comparator.comparingInt(String::length).reversed())
+                .sorted(Comparator.comparingInt(
+                        (ArgumentName argumentName) -> argumentName.getText().length()
+                ).reversed())
+                .map(ArgumentName::getText)
                 .map(Pattern::quote)
                 .collect(Collectors.joining("|"));
 
@@ -41,11 +44,11 @@ public final class ArgumentParser {
         Matcher matcher = argumentPattern.matcher(argumentString);
 
         String description = argumentString.trim();
-        String previousName = null;
+        ArgumentName previousName = null;
         int previousValueStartIndex = -1;
 
         while (matcher.find()) {
-            String argument = matcher.group(1);
+            ArgumentName argument = ArgumentName.fromText(matcher.group(1));
             if (previousName == null) {
                 description = argumentString.substring(0, matcher.start()).trim();
             } else {

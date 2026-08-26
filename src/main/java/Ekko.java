@@ -32,15 +32,18 @@ public class Ekko {
 
         String input = getInput().trim();
         printSeparator();
-        while (!input.equals("bye")) {
+        boolean shouldExit = false;
+        while (!shouldExit) {
             try {
-                handleInput(input);
+                shouldExit = handleInput(input);
             } catch (EkkoException e) {
                 sendMessage(e.getMessage());
             }
-            printSeparator();
-            input = getInput().trim();
-            printSeparator();
+            if (!shouldExit) {
+                printSeparator();
+                input = getInput().trim();
+                printSeparator();
+            }
         }
         sendMessage("Bye. Hope to see you again soon!");
         printSeparator();
@@ -51,25 +54,28 @@ public class Ekko {
      *
      * @param input complete line entered by the user
      */
-    private void handleInput(String input) throws EkkoException {
+    private boolean handleInput(String input) throws EkkoException {
         if (input.isBlank()) {
             throw new EkkoException("Please enter a command.");
         }
 
         String[] parts = input.split("\\s+", 2);
-        String commandWord = parts[0];
+        Command command = Command.from(parts[0]);
         String arguments = parts.length == 2 ? parts[1].trim() : "";
 
-        switch (commandWord) {
-        case "todo" -> addTodo(arguments);
-        case "deadline" -> addDeadline(arguments);
-        case "event" -> addEvent(arguments);
-        case "list" -> printTasks();
-        case "mark" -> markTask(arguments);
-        case "unmark" -> unmarkTask(arguments);
-        case "delete" -> deleteTask(arguments);
-        default -> throw new EkkoException("I don't recognise that command.");
+        switch (command) {
+        case TODO -> addTodo(arguments);
+        case DEADLINE -> addDeadline(arguments);
+        case EVENT -> addEvent(arguments);
+        case LIST -> printTasks();
+        case MARK -> markTask(arguments);
+        case UNMARK -> unmarkTask(arguments);
+        case DELETE -> deleteTask(arguments);
+        case BYE -> {
+            // The main loop displays the farewell message after this method returns.
         }
+        }
+        return command == Command.BYE;
     }
 
     private void addTodo(String arguments) throws EkkoException {
@@ -80,12 +86,12 @@ public class Ekko {
     }
 
     private void addDeadline(String arguments) throws EkkoException {
-        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of("by"));
-        String by = parsed.getArgument("by");
+        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of(ArgumentName.BY));
+        String by = parsed.getArgument(ArgumentName.BY);
 
         if (parsed.getDescription().isBlank()) {
             throw new EkkoException("The description of a deadline cannot be empty.");
-        } else if (!parsed.containsArgument("by") || by.isBlank()) {
+        } else if (!parsed.containsArgument(ArgumentName.BY) || by.isBlank()) {
             throw new EkkoException("A deadline must have a non-empty /by argument.");
         } else {
             addTask(new Deadline(parsed.getDescription(), by));
@@ -93,15 +99,18 @@ public class Ekko {
     }
 
     private void addEvent(String arguments) throws EkkoException {
-        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of("from", "to"));
-        String from = parsed.getArgument("from");
-        String to = parsed.getArgument("to");
+        ParsedArguments parsed = ArgumentParser.parse(
+                arguments,
+                Set.of(ArgumentName.FROM, ArgumentName.TO)
+        );
+        String from = parsed.getArgument(ArgumentName.FROM);
+        String to = parsed.getArgument(ArgumentName.TO);
 
         if (parsed.getDescription().isBlank()) {
             throw new EkkoException("The description of an event cannot be empty.");
-        } else if (!parsed.containsArgument("from") || from.isBlank()) {
+        } else if (!parsed.containsArgument(ArgumentName.FROM) || from.isBlank()) {
             throw new EkkoException("An event must have a non-empty /from argument.");
-        } else if (!parsed.containsArgument("to") || to.isBlank()) {
+        } else if (!parsed.containsArgument(ArgumentName.TO) || to.isBlank()) {
             throw new EkkoException("An event must have a non-empty /to argument.");
         } else {
             addTask(new Event(parsed.getDescription(), from, to));
