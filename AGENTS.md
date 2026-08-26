@@ -34,7 +34,9 @@ Follow the commit message and branch naming conventions at https://se-education.
 Use lightweight tags unless the user requests an annotated tag.
 When proposing or creating a commit message, include enough detail to explain the rationale for the change.
 Do not commit or push unless explicitly asked.
+Changes to `AGENTS.md` may be committed directly to the main branch with a relevant commit message.
 Develop changes on a feature branch rather than directly on the main branch.
 Before integrating a feature branch, rebase it onto the latest main branch to maintain a linear history.
 Avoid merge commits unless the user explicitly requests one.
 Do not force-push unless explicitly asked; when necessary, prefer `--force-with-lease` over `--force`.
+Delete feature branches after they have been merged.
