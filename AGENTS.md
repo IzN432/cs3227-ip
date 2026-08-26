@@ -28,6 +28,13 @@ Unless the user says otherwise, assume that you are assisting a student working 
 
 Ensure that Java 25 is used when running the application or build tasks. On macOS, use `sdk use java 25.0.3.fx-zulu` to switch to Java 25 if needed.
 
+## Testing
+
+After every code update:
+
+1. Review `test/ui-test-plan.md` and update its test cases, expected output, and test-design reasons when the code change affects or adds user-visible behavior.
+2. Invoke the `run-ekko-ui-tests` skill to run the complete UI test plan, even when no update to the test plan is needed.
+
 ## Git
 
 Follow the commit message and branch naming conventions at https://se-education.org/guides/conventions/git.html.
