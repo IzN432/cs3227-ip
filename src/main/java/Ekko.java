@@ -35,7 +35,12 @@ public class Ekko {
         String input = getInput().trim();
         printSeparator();
         while (!input.equals("bye")) {
-            handleInput(input);
+            try {
+                handleInput(input);
+            } catch (EkkoException e) {
+                sendMessage(e.getMessage());
+            }
+            printSeparator();
             input = getInput().trim();
             printSeparator();
         }
@@ -48,11 +53,9 @@ public class Ekko {
      *
      * @param input complete line entered by the user
      */
-    private void handleInput(String input) {
+    private void handleInput(String input) throws EkkoException {
         if (input.isBlank()) {
-            sendMessage("Please enter a command.");
-            printSeparator();
-            return;
+            throw new EkkoException("Please enter a command.");
         }
 
         String[] parts = input.split("\\s+", 2);
@@ -66,51 +69,41 @@ public class Ekko {
         case "list" -> printTasks();
         case "mark" -> markTask(arguments);
         case "unmark" -> unmarkTask(arguments);
-        default -> {
-            sendMessage("I don't recognise that command.");
-            printSeparator();
-        }
+        default -> throw new EkkoException("I don't recognise that command.");
         }
     }
 
-    private void addTodo(String arguments) {
+    private void addTodo(String arguments) throws EkkoException {
         if (arguments.isBlank()) {
-            sendMessage("The description of a todo cannot be empty.");
-            printSeparator();
-            return;
+            throw new EkkoException("The description of a todo cannot be empty.");
         }
         addTask(new Todo(arguments));
     }
 
-    private void addDeadline(String arguments) {
+    private void addDeadline(String arguments) throws EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of("by"));
         String by = parsed.getArgument("by");
 
         if (parsed.getDescription().isBlank()) {
-            sendMessage("The description of a deadline cannot be empty.");
-            printSeparator();
+            throw new EkkoException("The description of a deadline cannot be empty.");
         } else if (!parsed.containsArgument("by") || by.isBlank()) {
-            sendMessage("A deadline must have a non-empty /by argument.");
-            printSeparator();
+            throw new EkkoException("A deadline must have a non-empty /by argument.");
         } else {
             addTask(new Deadline(parsed.getDescription(), by));
         }
     }
 
-    private void addEvent(String arguments) {
+    private void addEvent(String arguments) throws EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of("from", "to"));
         String from = parsed.getArgument("from");
         String to = parsed.getArgument("to");
 
         if (parsed.getDescription().isBlank()) {
-            sendMessage("The description of an event cannot be empty.");
-            printSeparator();
+            throw new EkkoException("The description of an event cannot be empty.");
         } else if (!parsed.containsArgument("from") || from.isBlank()) {
-            sendMessage("An event must have a non-empty /from argument.");
-            printSeparator();
+            throw new EkkoException("An event must have a non-empty /from argument.");
         } else if (!parsed.containsArgument("to") || to.isBlank()) {
-            sendMessage("An event must have a non-empty /to argument.");
-            printSeparator();
+            throw new EkkoException("An event must have a non-empty /to argument.");
         } else {
             addTask(new Event(parsed.getDescription(), from, to));
         }
@@ -122,11 +115,9 @@ public class Ekko {
      *
      * @param task task to store
      */
-    private void addTask(Task task) {
+    private void addTask(Task task) throws EkkoException {
         if (taskCount >= tasks.length) {
-            sendMessage("Sorry, I can't store any more tasks.");
-            printSeparator();
-            return;
+            throw new EkkoException("Sorry, I can't store any more tasks.");
         }
         tasks[taskCount] = task;
         taskCount++;
@@ -135,7 +126,6 @@ public class Ekko {
                 task,
                 taskCount
         ));
-        printSeparator();
     }
 
     /**
@@ -150,7 +140,6 @@ public class Ekko {
             }
             System.out.println();
         }
-        printSeparator();
     }
 
     /**
@@ -159,14 +148,16 @@ public class Ekko {
      *
      * @param arguments text following the {@code mark} command
      */
-    private void markTask(String arguments) {
+    private void markTask(String arguments) throws EkkoException {
         if (arguments.isBlank()) {
-            sendMessage("Please provide a task number.");
+            throw new EkkoException("Please provide a task number.");
         } else {
             try {
                 int taskIndex = Integer.parseInt(arguments) - 1;
                 if (taskIndex < 0 || taskIndex >= taskCount) {
-                    sendMessage("Please input a valid task number. You can send list to see how many tasks you have.");
+                    throw new EkkoException(
+                            "Please input a valid task number. You can send list to see how many tasks you have."
+                    );
                 } else if (tasks[taskIndex].isMarked()) {
                     sendMessage("This task has already been marked as done:\n  " + tasks[taskIndex]);
                 } else {
@@ -174,10 +165,9 @@ public class Ekko {
                     sendMessage("Nice! I've marked this task as done:\n  " + tasks[taskIndex]);
                 }
             } catch (NumberFormatException e) {
-                sendMessage("Please provide a valid task number.");
+                throw new EkkoException("Please provide a valid task number.");
             }
         }
-        printSeparator();
     }
 
     /**
@@ -186,14 +176,16 @@ public class Ekko {
      *
      * @param arguments text following the {@code unmark} command
      */
-    private void unmarkTask(String arguments) {
+    private void unmarkTask(String arguments) throws EkkoException {
         if (arguments.isBlank()) {
-            sendMessage("Please provide a task number.");
+            throw new EkkoException("Please provide a task number.");
         } else {
             try {
                 int taskIndex = Integer.parseInt(arguments) - 1;
                 if (taskIndex < 0 || taskIndex >= taskCount) {
-                    sendMessage("Please input a valid task number. You can send list to see how many tasks you have.");
+                    throw new EkkoException(
+                            "Please input a valid task number. You can send list to see how many tasks you have."
+                    );
                 } else if (!tasks[taskIndex].isMarked()) {
                     sendMessage("This task has already been unmarked:\n  " + tasks[taskIndex]);
                 } else {
@@ -201,10 +193,9 @@ public class Ekko {
                     sendMessage("Okay, I've unmarked this task as not done yet:\n  " + tasks[taskIndex]);
                 }
             } catch (NumberFormatException e) {
-                sendMessage("Please provide a valid task number.");
+                throw new EkkoException("Please provide a valid task number.");
             }
         }
-        printSeparator();
     }
 
     private String getInput() {
