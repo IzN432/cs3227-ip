@@ -1,9 +1,12 @@
-public class Task {
+/**
+ * Represents the common state and behaviour of all task types.
+ */
+public abstract class Task {
     private boolean marked;
-    private final String task;
+    private final String description;
 
-    public Task(String task) {
-        this.task = task;
+    protected Task(String description) {
+        this.description = description;
         marked = false;
     }
 
@@ -17,6 +20,6 @@ public class Task {
 
     @Override
     public String toString() {
-        return String.format("[%c] %s", marked ? 'X' : ' ', task);
+        return String.format("[%c] %s", marked ? 'X' : ' ', description);
     }
 }

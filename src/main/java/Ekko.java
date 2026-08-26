@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * Starts the Ekko chatbot application.
@@ -31,22 +32,11 @@ public class Ekko {
         sendMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", getName()));
         printSeparator();
 
-        String input = getInput();
-        String[] command = input.split("\\s+");
+        String input = getInput().trim();
         printSeparator();
-        while (!command[0].equals("bye")) {
-            if (command[0].equals("list")) {
-                printTasks();
-            } else if (command[0].equals("mark")) {
-                markTask(command);
-            } else if (command[0].equals("unmark")) {
-                unmarkTask(command);
-            } else {
-                addTask(input);
-            }
-
-            input = getInput();
-            command = input.split("\\s+");
+        while (!input.equals("bye")) {
+            handleInput(input);
+            input = getInput().trim();
             printSeparator();
         }
         sendMessage("Bye. Hope to see you again soon!");
@@ -54,20 +44,97 @@ public class Ekko {
     }
 
     /**
+     * Identifies a command and passes its remaining text to the appropriate handler.
+     *
+     * @param input complete line entered by the user
+     */
+    private void handleInput(String input) {
+        if (input.isBlank()) {
+            sendMessage("Please enter a command.");
+            printSeparator();
+            return;
+        }
+
+        String[] parts = input.split("\\s+", 2);
+        String commandWord = parts[0];
+        String arguments = parts.length == 2 ? parts[1].trim() : "";
+
+        switch (commandWord) {
+        case "todo" -> addTodo(arguments);
+        case "deadline" -> addDeadline(arguments);
+        case "event" -> addEvent(arguments);
+        case "list" -> printTasks();
+        case "mark" -> markTask(arguments);
+        case "unmark" -> unmarkTask(arguments);
+        default -> {
+            sendMessage("I don't recognise that command.");
+            printSeparator();
+        }
+        }
+    }
+
+    private void addTodo(String arguments) {
+        if (arguments.isBlank()) {
+            sendMessage("The description of a todo cannot be empty.");
+            printSeparator();
+            return;
+        }
+        addTask(new Todo(arguments));
+    }
+
+    private void addDeadline(String arguments) {
+        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of("by"));
+        String by = parsed.getArgument("by");
+
+        if (parsed.getDescription().isBlank()) {
+            sendMessage("The description of a deadline cannot be empty.");
+            printSeparator();
+        } else if (!parsed.containsArgument("by") || by.isBlank()) {
+            sendMessage("A deadline must have a non-empty /by argument.");
+            printSeparator();
+        } else {
+            addTask(new Deadline(parsed.getDescription(), by));
+        }
+    }
+
+    private void addEvent(String arguments) {
+        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of("from", "to"));
+        String from = parsed.getArgument("from");
+        String to = parsed.getArgument("to");
+
+        if (parsed.getDescription().isBlank()) {
+            sendMessage("The description of an event cannot be empty.");
+            printSeparator();
+        } else if (!parsed.containsArgument("from") || from.isBlank()) {
+            sendMessage("An event must have a non-empty /from argument.");
+            printSeparator();
+        } else if (!parsed.containsArgument("to") || to.isBlank()) {
+            sendMessage("An event must have a non-empty /to argument.");
+            printSeparator();
+        } else {
+            addTask(new Event(parsed.getDescription(), from, to));
+        }
+    }
+
+    /**
      * Stores the user's input and confirms that it was added.
      * If the storage is full, displays a message without adding the input.
      *
-     * @param task task description to store
+     * @param task task to store
      */
-    private void addTask(String task) {
+    private void addTask(Task task) {
         if (taskCount >= tasks.length) {
             sendMessage("Sorry, I can't store any more tasks.");
             printSeparator();
             return;
         }
-        tasks[taskCount] = new Task(task);
+        tasks[taskCount] = task;
         taskCount++;
-        sendMessage(String.format("added: %s", task));
+        sendMessage(String.format(
+                "Got it. I've added this task:\n  %s\nNow you have %d tasks in the list.",
+                task,
+                taskCount
+        ));
         printSeparator();
     }
 
@@ -90,14 +157,14 @@ public class Ekko {
      * Marks the task identified by a mark command as complete.
      * Displays an error message when the command does not contain a valid task number.
      *
-     * @param command parsed command words, such as {@code ["mark", "1"]}
+     * @param arguments text following the {@code mark} command
      */
-    private void markTask(String[] command) {
-        if (command.length < 2) {
+    private void markTask(String arguments) {
+        if (arguments.isBlank()) {
             sendMessage("Please provide a task number.");
         } else {
             try {
-                int taskIndex = Integer.parseInt(command[1]) - 1;
+                int taskIndex = Integer.parseInt(arguments) - 1;
                 if (taskIndex < 0 || taskIndex >= taskCount) {
                     sendMessage("Please input a valid task number. You can send list to see how many tasks you have.");
                 } else if (tasks[taskIndex].isMarked()) {
@@ -117,14 +184,14 @@ public class Ekko {
      * Marks the task identified by an unmark command as incomplete.
      * Displays an error message when the command does not contain a valid task number.
      *
-     * @param command parsed command words, such as {@code ["unmark", "1"]}
+     * @param arguments text following the {@code unmark} command
      */
-    private void unmarkTask(String[] command) {
-        if (command.length < 2) {
+    private void unmarkTask(String arguments) {
+        if (arguments.isBlank()) {
             sendMessage("Please provide a task number.");
         } else {
             try {
-                int taskIndex = Integer.parseInt(command[1]) - 1;
+                int taskIndex = Integer.parseInt(arguments) - 1;
                 if (taskIndex < 0 || taskIndex >= taskCount) {
                     sendMessage("Please input a valid task number. You can send list to see how many tasks you have.");
                 } else if (!tasks[taskIndex].isMarked()) {
