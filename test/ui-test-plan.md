@@ -142,6 +142,123 @@ Now you have 1 tasks in the list.
 Bye. Hope to see you again soon!
 ```
 
+## `delete`
+
+### DELETE-01 — Delete a task and renumber the remaining tasks
+
+**Reason:** State-transition testing of removal from the middle of the list, including the resulting task count and numbering.
+
+**Input**
+
+```text
+todo first task
+todo second task
+todo third task
+delete 2
+list
+bye
+```
+
+**Expected normalized output**
+
+```text
+Got it. I've added this task:
+  [T][ ] first task
+Now you have 1 tasks in the list.
+Got it. I've added this task:
+  [T][ ] second task
+Now you have 2 tasks in the list.
+Got it. I've added this task:
+  [T][ ] third task
+Now you have 3 tasks in the list.
+Noted. I've removed this task:
+  [T][ ] second task
+Now you have 2 tasks in the list.
+1.[T][ ] first task
+2.[T][ ] third task
+Bye. Hope to see you again soon!
+```
+
+### DELETE-02 — Reject task number zero
+
+**Reason:** Boundary value analysis immediately below the lowest valid one-based task number.
+
+**Input**
+
+```text
+todo borrow book
+delete 0
+bye
+```
+
+**Expected normalized output**
+
+```text
+Got it. I've added this task:
+  [T][ ] borrow book
+Now you have 1 tasks in the list.
+Please input a valid task number. You can send list to see how many tasks you have.
+Bye. Hope to see you again soon!
+```
+
+### DELETE-03 — Reject a task number above the current count
+
+**Reason:** Boundary value analysis immediately above the highest valid task number.
+
+**Input**
+
+```text
+todo borrow book
+delete 2
+bye
+```
+
+**Expected normalized output**
+
+```text
+Got it. I've added this task:
+  [T][ ] borrow book
+Now you have 1 tasks in the list.
+Please input a valid task number. You can send list to see how many tasks you have.
+Bye. Hope to see you again soon!
+```
+
+### DELETE-04 — Reject a nonnumeric task number
+
+**Reason:** Equivalence partitioning for arguments outside the integer input domain.
+
+**Input**
+
+```text
+delete first
+bye
+```
+
+**Expected normalized output**
+
+```text
+Please provide a valid task number.
+Bye. Hope to see you again soon!
+```
+
+### DELETE-05 — Reject a missing task number
+
+**Reason:** Boundary value analysis at an argument length of zero.
+
+**Input**
+
+```text
+delete
+bye
+```
+
+**Expected normalized output**
+
+```text
+Please provide a task number.
+Bye. Hope to see you again soon!
+```
+
 ## `event`
 
 ### EVENT-01 — Add a valid event with multiword values

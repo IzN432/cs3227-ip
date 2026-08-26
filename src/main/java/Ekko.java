@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -6,21 +8,17 @@ import java.util.Set;
  */
 public class Ekko {
 
-    private static final int MAX_TASKS = 100;
-
     public static void main(String[] args) {
         Ekko instance = new Ekko();
         instance.mainLoop();
     }
 
     private final Scanner scanner;
-    private final Task[] tasks;
-    private int taskCount;
+    private final List<Task> tasks;
 
     public Ekko() {
         scanner = new Scanner(System.in);
-        tasks = new Task[MAX_TASKS];
-        taskCount = 0;
+        tasks = new ArrayList<>();
     }
 
     /**
@@ -69,6 +67,7 @@ public class Ekko {
         case "list" -> printTasks();
         case "mark" -> markTask(arguments);
         case "unmark" -> unmarkTask(arguments);
+        case "delete" -> deleteTask(arguments);
         default -> throw new EkkoException("I don't recognise that command.");
         }
     }
@@ -111,20 +110,15 @@ public class Ekko {
 
     /**
      * Stores the user's input and confirms that it was added.
-     * If the storage is full, displays a message without adding the input.
      *
      * @param task task to store
      */
-    private void addTask(Task task) throws EkkoException {
-        if (taskCount >= tasks.length) {
-            throw new EkkoException("Sorry, I can't store any more tasks.");
-        }
-        tasks[taskCount] = task;
-        taskCount++;
+    private void addTask(Task task) {
+        tasks.add(task);
         sendMessage(String.format(
                 "Got it. I've added this task:\n  %s\nNow you have %d tasks in the list.",
                 task,
-                taskCount
+                tasks.size()
         ));
     }
 
@@ -132,11 +126,11 @@ public class Ekko {
      * Displays all tasks in the order they were added.
      */
     private void printTasks() {
-        if (taskCount == 0) {
+        if (tasks.isEmpty()) {
             sendMessage("No tasks found!");
         } else {
-            for (int i = 0; i < taskCount; i++) {
-                System.out.printf("%d.%s\n", i + 1, tasks[i]);
+            for (int i = 0; i < tasks.size(); i++) {
+                System.out.printf("%d.%s\n", i + 1, tasks.get(i));
             }
             System.out.println();
         }
@@ -154,15 +148,15 @@ public class Ekko {
         } else {
             try {
                 int taskIndex = Integer.parseInt(arguments) - 1;
-                if (taskIndex < 0 || taskIndex >= taskCount) {
+                if (taskIndex < 0 || taskIndex >= tasks.size()) {
                     throw new EkkoException(
                             "Please input a valid task number. You can send list to see how many tasks you have."
                     );
-                } else if (tasks[taskIndex].isMarked()) {
-                    sendMessage("This task has already been marked as done:\n  " + tasks[taskIndex]);
+                } else if (tasks.get(taskIndex).isMarked()) {
+                    sendMessage("This task has already been marked as done:\n  " + tasks.get(taskIndex));
                 } else {
-                    tasks[taskIndex].setMarked(true);
-                    sendMessage("Nice! I've marked this task as done:\n  " + tasks[taskIndex]);
+                    tasks.get(taskIndex).setMarked(true);
+                    sendMessage("Nice! I've marked this task as done:\n  " + tasks.get(taskIndex));
                 }
             } catch (NumberFormatException e) {
                 throw new EkkoException("Please provide a valid task number.");
@@ -182,15 +176,45 @@ public class Ekko {
         } else {
             try {
                 int taskIndex = Integer.parseInt(arguments) - 1;
-                if (taskIndex < 0 || taskIndex >= taskCount) {
+                if (taskIndex < 0 || taskIndex >= tasks.size()) {
                     throw new EkkoException(
                             "Please input a valid task number. You can send list to see how many tasks you have."
                     );
-                } else if (!tasks[taskIndex].isMarked()) {
-                    sendMessage("This task has already been unmarked:\n  " + tasks[taskIndex]);
+                } else if (!tasks.get(taskIndex).isMarked()) {
+                    sendMessage("This task has already been unmarked:\n  " + tasks.get(taskIndex));
                 } else {
-                    tasks[taskIndex].setMarked(false);
-                    sendMessage("Okay, I've unmarked this task as not done yet:\n  " + tasks[taskIndex]);
+                    tasks.get(taskIndex).setMarked(false);
+                    sendMessage("Okay, I've unmarked this task as not done yet:\n  " + tasks.get(taskIndex));
+                }
+            } catch (NumberFormatException e) {
+                throw new EkkoException("Please provide a valid task number.");
+            }
+        }
+    }
+
+    /**
+     * Deletes the task identified by a delete command.
+     * Displays an error message when the command does not contain a valid task number.
+     *
+     * @param arguments text following the {@code delete} command
+     */
+    private void deleteTask(String arguments) throws EkkoException {
+        if (arguments.isBlank()) {
+            throw new EkkoException("Please provide a task number.");
+        } else {
+            try {
+                int taskIndex = Integer.parseInt(arguments) - 1;
+                if (taskIndex < 0 || taskIndex >= tasks.size()) {
+                    throw new EkkoException(
+                            "Please input a valid task number. You can send list to see how many tasks you have."
+                    );
+                } else {
+                    Task deletedTask = tasks.remove(taskIndex);
+                    sendMessage(String.format(
+                            "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
+                            deletedTask,
+                            tasks.size()
+                    ));
                 }
             } catch (NumberFormatException e) {
                 throw new EkkoException("Please provide a valid task number.");
