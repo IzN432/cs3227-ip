@@ -12,6 +12,12 @@ public class Event extends Task {
     }
 
     @Override
+    public String toSerializedString() {
+        return String.format("E | %d | %s | %s | %s",
+                isMarked() ? 1 : 0, getDescription(), from, to);
+    }
+
+    @Override
     public String toString() {
         return String.format("[E]%s (from: %s to: %s)",
                 super.toString(), from, to);

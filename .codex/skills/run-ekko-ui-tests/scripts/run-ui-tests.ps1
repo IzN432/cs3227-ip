@@ -41,7 +41,7 @@ function Normalize-ExpectedOutput([string] $output) {
         Where-Object { $_ -ne "" }) -join "`n"
 }
 
-function Run-Ekko([string[]] $inputLines) {
+function Run-Ekko([string[]] $inputLines, [string] $workingPath) {
     $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $processInfo.FileName = "java"
     $processInfo.ArgumentList.Add("-cp")
@@ -51,6 +51,7 @@ function Run-Ekko([string[]] $inputLines) {
     $processInfo.RedirectStandardOutput = $true
     $processInfo.RedirectStandardError = $true
     $processInfo.UseShellExecute = $false
+    $processInfo.WorkingDirectory = $workingPath
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $processInfo
@@ -93,10 +94,24 @@ if ($cases.Count -eq 0) {
 $passed = 0
 foreach ($case in $cases) {
     $id = $case.Groups["id"].Value
+    $casePath = Join-Path $buildPath $id
+    New-Item -ItemType Directory -Force -Path $casePath | Out-Null
+
+    $initialDataMatch = [regex]::Match(
+        $case.Value,
+        '(?ms)^\*\*Initial data file\*\*\s*```text\s*\n(?<data>.*?)^```\s*'
+    )
+    if ($initialDataMatch.Success) {
+        $dataPath = Join-Path $casePath "data"
+        New-Item -ItemType Directory -Force -Path $dataPath | Out-Null
+        $initialData = $initialDataMatch.Groups["data"].Value.Trim("`r", "`n")
+        Set-Content -LiteralPath (Join-Path $dataPath "ekko.txt") -Value $initialData
+    }
+
     $inputText = $case.Groups["input"].Value.Trim("`r", "`n")
     $inputLines = $inputText -replace "`r`n", "`n" -replace "`r", "`n" -split "`n"
     $expected = Normalize-ExpectedOutput $case.Groups["expected"].Value
-    $actual = Normalize-ActualOutput (Run-Ekko $inputLines)
+    $actual = Normalize-ActualOutput (Run-Ekko $inputLines $casePath)
 
     if ($actual -ne $expected) {
         Write-Host "[FAIL] $id"

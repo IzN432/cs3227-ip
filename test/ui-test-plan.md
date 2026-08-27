@@ -6,6 +6,8 @@ This plan verifies the command-line behaviour implemented in the working tree. E
 
 The automated runner removes the fixed startup banner, greeting, blank lines, and 80-character separators. It compares all remaining lines exactly, including task numbering, status markers, descriptions, date/time text, and confirmation or error messages. The special input line `<blank>` represents pressing Enter without typing anything.
 
+An optional **Initial data file** block provides the contents of `data/ekko.txt` before Ekko starts. When omitted, neither the data directory nor the data file exists for that test.
+
 The cases are sorted alphabetically by command under test.
 
 ## Blank input
@@ -576,6 +578,37 @@ Nice! I've marked this task as done:
   [T][X] borrow book
 This task has already been marked as done:
   [T][X] borrow book
+Bye. Hope to see you again soon!
+```
+
+## Startup loading
+
+### LOAD-01 — Load saved tasks when Ekko starts
+
+**Reason:** State-restoration testing across all task types and both completion states.
+
+**Initial data file**
+
+```text
+T | 1 | read book
+D | 0 | return book | Sunday
+E | 0 | project meeting | Mon 2pm | Tue 4pm
+```
+
+**Input**
+
+```text
+list
+bye
+```
+
+**Expected normalized output**
+
+```text
+Here are the tasks in your list:
+1.[T][X] read book
+2.[D][ ] return book (by: Sunday)
+3.[E][ ] project meeting (from: Mon 2pm to: Tue 4pm)
 Bye. Hope to see you again soon!
 ```
 

@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -8,7 +9,7 @@ import java.util.Set;
  */
 public class Ekko {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Ekko instance = new Ekko();
         instance.mainLoop();
     }
@@ -16,15 +17,15 @@ public class Ekko {
     private final Scanner scanner;
     private final List<Task> tasks;
 
-    public Ekko() {
+    public Ekko() throws IOException {
         scanner = new Scanner(System.in);
-        tasks = new ArrayList<>();
+        tasks = new ArrayList<>(Storage.loadTasks());
     }
 
     /**
      * Runs the chatbot until the user enters the {@code bye} command.
      */
-    public void mainLoop() {
+    public void mainLoop() throws IOException {
         printSeparator();
         printBanner();
         sendMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", getName()));
@@ -54,7 +55,7 @@ public class Ekko {
      *
      * @param input complete line entered by the user
      */
-    private boolean handleInput(String input) throws EkkoException {
+    private boolean handleInput(String input) throws IOException, EkkoException {
         if (input.isBlank()) {
             throw new EkkoException("Please enter a command.");
         }
@@ -78,14 +79,14 @@ public class Ekko {
         return command == Command.BYE;
     }
 
-    private void addTodo(String arguments) throws EkkoException {
+    private void addTodo(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
             throw new EkkoException("The description of a todo cannot be empty.");
         }
         addTask(new Todo(arguments));
     }
 
-    private void addDeadline(String arguments) throws EkkoException {
+    private void addDeadline(String arguments) throws IOException, EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of(ArgumentName.BY));
         String by = parsed.getArgument(ArgumentName.BY);
 
@@ -98,7 +99,7 @@ public class Ekko {
         }
     }
 
-    private void addEvent(String arguments) throws EkkoException {
+    private void addEvent(String arguments) throws IOException, EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(
                 arguments,
                 Set.of(ArgumentName.FROM, ArgumentName.TO)
@@ -122,8 +123,9 @@ public class Ekko {
      *
      * @param task task to store
      */
-    private void addTask(Task task) {
+    private void addTask(Task task) throws IOException {
         tasks.add(task);
+        Storage.saveTasks(tasks);
         sendMessage(String.format(
                 "Got it. I've added this task:\n  %s\nNow you have %d tasks in the list.",
                 task,
@@ -152,7 +154,7 @@ public class Ekko {
      *
      * @param arguments text following the {@code mark} command
      */
-    private void markTask(String arguments) throws EkkoException {
+    private void markTask(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
             throw new EkkoException("Please provide a task number.");
         } else {
@@ -166,6 +168,7 @@ public class Ekko {
                     sendMessage("This task has already been marked as done:\n  " + tasks.get(taskIndex));
                 } else {
                     tasks.get(taskIndex).setMarked(true);
+                    Storage.saveTasks(tasks);
                     sendMessage("Nice! I've marked this task as done:\n  " + tasks.get(taskIndex));
                 }
             } catch (NumberFormatException e) {
@@ -180,7 +183,7 @@ public class Ekko {
      *
      * @param arguments text following the {@code unmark} command
      */
-    private void unmarkTask(String arguments) throws EkkoException {
+    private void unmarkTask(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
             throw new EkkoException("Please provide a task number.");
         } else {
@@ -194,6 +197,7 @@ public class Ekko {
                     sendMessage("This task has already been unmarked:\n  " + tasks.get(taskIndex));
                 } else {
                     tasks.get(taskIndex).setMarked(false);
+                    Storage.saveTasks(tasks);
                     sendMessage("Okay, I've unmarked this task as not done yet:\n  " + tasks.get(taskIndex));
                 }
             } catch (NumberFormatException e) {
@@ -208,7 +212,7 @@ public class Ekko {
      *
      * @param arguments text following the {@code delete} command
      */
-    private void deleteTask(String arguments) throws EkkoException {
+    private void deleteTask(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
             throw new EkkoException("Please provide a task number.");
         } else {
@@ -220,6 +224,7 @@ public class Ekko {
                     );
                 } else {
                     Task deletedTask = tasks.remove(taskIndex);
+                    Storage.saveTasks(tasks);
                     sendMessage(String.format(
                             "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
                             deletedTask,

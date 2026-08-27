@@ -10,6 +10,12 @@ public class Deadline extends Task {
     }
 
     @Override
+    public String toSerializedString() {
+        return String.format("D | %d | %s | %s",
+                isMarked() ? 1 : 0, getDescription(), by);
+    }
+
+    @Override
     public String toString() {
         return String.format("[D]%s (by: %s)", super.toString(), by);
     }
