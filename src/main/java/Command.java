@@ -7,6 +7,7 @@ public enum Command {
     TODO,
     DEADLINE,
     EVENT,
+    AGENDA,
     LIST,
     MARK,
     UNMARK,

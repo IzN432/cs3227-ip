@@ -43,4 +43,14 @@ public final class Storage {
         Files.createDirectories(DATA_FILE.getParent());
         Files.write(DATA_FILE, tasks.stream().map(Task::toSerializedString).toList());
     }
+
+    /**
+     * Deletes the task data file when it exists.
+     *
+     * @return {@code true} if a file was deleted
+     * @throws IOException if the file cannot be deleted
+     */
+    public static boolean deleteDataFile() throws IOException {
+        return Files.deleteIfExists(DATA_FILE);
+    }
 }

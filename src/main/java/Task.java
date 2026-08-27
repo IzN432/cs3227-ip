@@ -1,3 +1,5 @@
+import java.time.LocalDate;
+
 /**
  * Represents the common state and behaviour of all task types.
  */
@@ -47,11 +49,11 @@ public abstract class Task {
         }
         case "D" -> {
             requireFieldCount(fields, 4);
-            yield new Deadline(fields[2], fields[3]);
+            yield new Deadline(fields[2], DateTimeParser.parse(fields[3]));
         }
         case "E" -> {
             requireFieldCount(fields, 5);
-            yield new Event(fields[2], fields[3], fields[4]);
+            yield new Event(fields[2], DateTimeParser.parse(fields[3]), DateTimeParser.parse(fields[4]));
         }
         default -> throw invalidSerializedTask(serializedTask);
         };
@@ -75,6 +77,17 @@ public abstract class Task {
      * @return serialized task data
      */
     public abstract String toSerializedString();
+
+    /**
+     * Reports whether this task is associated with the specified calendar date.
+     * Tasks without dates return {@code false} by default.
+     *
+     * @param date date to check
+     * @return whether this task occurs on that date
+     */
+    public boolean occursOn(LocalDate date) {
+        return false;
+    }
 
     @Override
     public String toString() {

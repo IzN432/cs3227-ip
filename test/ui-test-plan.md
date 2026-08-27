@@ -10,6 +10,96 @@ An optional **Initial data file** block provides the contents of `data/ekko.txt`
 
 The cases are sorted alphabetically by command under test.
 
+## `agenda`
+
+### AGENDA-01 — Show dated tasks occurring on a date
+
+**Reason:** Category-partition testing verifies deadline matching, multi-day event overlap, todo exclusion, and filtered numbering.
+
+**Initial data file**
+
+```text
+T | 0 | undated task
+D | 0 | return book | 2019-12-02T18:00
+E | 0 | conference | 2019-12-01T09:00 | 2019-12-03T17:00
+```
+
+**Input**
+
+```text
+agenda 2/12/2019
+bye
+```
+
+**Expected normalized output**
+
+```text
+Here are the deadlines and events on Dec 02 2019:
+1.[D][ ] return book (by: Dec 02 2019, 6:00 PM)
+2.[E][ ] conference (from: Dec 01 2019, 9:00 AM to: Dec 03 2019, 5:00 PM)
+Bye. Hope to see you again soon!
+```
+
+### AGENDA-02 — Report no tasks on a date
+
+**Reason:** Boundary testing covers an empty filtered result when dated tasks exist only on other dates.
+
+**Initial data file**
+
+```text
+D | 0 | return book | 2019-12-02T18:00
+```
+
+**Input**
+
+```text
+agenda 2019-12-03
+bye
+```
+
+**Expected normalized output**
+
+```text
+No deadlines or events found on Dec 03 2019.
+Bye. Hope to see you again soon!
+```
+
+### AGENDA-03 — Reject a missing date
+
+**Reason:** Boundary value analysis at the minimum agenda argument length of zero.
+
+**Input**
+
+```text
+agenda
+bye
+```
+
+**Expected normalized output**
+
+```text
+Please provide a date for the agenda.
+Bye. Hope to see you again soon!
+```
+
+### AGENDA-04 — Reject an invalid date
+
+**Reason:** Robustness testing verifies that an impossible calendar date does not run the query.
+
+**Input**
+
+```text
+agenda 2019-02-29
+bye
+```
+
+**Expected normalized output**
+
+```text
+Please use a valid date such as 2019-10-15 or 2/12/2019.
+Bye. Hope to see you again soon!
+```
+
 ## Blank input
 
 ### BLANK-01 — Reject an empty command
@@ -57,7 +147,7 @@ Bye. Hope to see you again soon!
 **Input**
 
 ```text
-deadline return book /by Sunday
+deadline return book /by 2/12/2019 1800
 bye
 ```
 
@@ -65,7 +155,7 @@ bye
 
 ```text
 Got it. I've added this task:
-  [D][ ] return book (by: Sunday)
+  [D][ ] return book (by: Dec 02 2019, 6:00 PM)
 Now you have 1 tasks in the list.
 Bye. Hope to see you again soon!
 ```
@@ -131,7 +221,7 @@ Bye. Hope to see you again soon!
 **Input**
 
 ```text
-deadline read /about Java /by Sunday
+deadline read /about Java /by 2019-12-02
 bye
 ```
 
@@ -139,8 +229,26 @@ bye
 
 ```text
 Got it. I've added this task:
-  [D][ ] read /about Java (by: Sunday)
+  [D][ ] read /about Java (by: Dec 02 2019)
 Now you have 1 tasks in the list.
+Bye. Hope to see you again soon!
+```
+
+### DEADLINE-06 — Reject an invalid calendar date
+
+**Reason:** Robustness testing verifies that syntactically plausible but impossible dates are rejected.
+
+**Input**
+
+```text
+deadline return book /by 2019-02-29
+bye
+```
+
+**Expected normalized output**
+
+```text
+Please use a valid date/time such as 2019-10-15 or 2/12/2019 1800.
 Bye. Hope to see you again soon!
 ```
 
@@ -271,7 +379,7 @@ Bye. Hope to see you again soon!
 **Input**
 
 ```text
-event project meeting /from Mon 2pm /to Tue 4pm
+event project meeting /from 2019-12-02 1400 /to 2019-12-03 1600
 bye
 ```
 
@@ -279,7 +387,7 @@ bye
 
 ```text
 Got it. I've added this task:
-  [E][ ] project meeting (from: Mon 2pm to: Tue 4pm)
+  [E][ ] project meeting (from: Dec 02 2019, 2:00 PM to: Dec 03 2019, 4:00 PM)
 Now you have 1 tasks in the list.
 Bye. Hope to see you again soon!
 ```
@@ -381,7 +489,7 @@ Bye. Hope to see you again soon!
 **Input**
 
 ```text
-event project /form discussion /from 2pm /to 4pm
+event project /form discussion /from 2019-12-02 1400 /to 2019-12-02 1600
 bye
 ```
 
@@ -389,8 +497,26 @@ bye
 
 ```text
 Got it. I've added this task:
-  [E][ ] project /form discussion (from: 2pm to: 4pm)
+  [E][ ] project /form discussion (from: Dec 02 2019, 2:00 PM to: Dec 02 2019, 4:00 PM)
 Now you have 1 tasks in the list.
+Bye. Hope to see you again soon!
+```
+
+### EVENT-08 — Reject an end before the start
+
+**Reason:** Boundary-order testing checks the invalid interval where the end precedes the start.
+
+**Input**
+
+```text
+event meeting /from 2019-12-03 1400 /to 2019-12-02 1600
+bye
+```
+
+**Expected normalized output**
+
+```text
+An event's /to date/time cannot be before its /from date/time.
 Bye. Hope to see you again soon!
 ```
 
@@ -422,8 +548,8 @@ Bye. Hope to see you again soon!
 
 ```text
 todo borrow book
-deadline return book /by Sunday
-event meeting /from 2pm /to 4pm
+deadline return book /by 2019-12-02
+event meeting /from 2019-12-02 1400 /to 2019-12-02 1600
 list
 bye
 ```
@@ -435,15 +561,15 @@ Got it. I've added this task:
   [T][ ] borrow book
 Now you have 1 tasks in the list.
 Got it. I've added this task:
-  [D][ ] return book (by: Sunday)
+  [D][ ] return book (by: Dec 02 2019)
 Now you have 2 tasks in the list.
 Got it. I've added this task:
-  [E][ ] meeting (from: 2pm to: 4pm)
+  [E][ ] meeting (from: Dec 02 2019, 2:00 PM to: Dec 02 2019, 4:00 PM)
 Now you have 3 tasks in the list.
 Here are the tasks in your list:
 1.[T][ ] borrow book
-2.[D][ ] return book (by: Sunday)
-3.[E][ ] meeting (from: 2pm to: 4pm)
+2.[D][ ] return book (by: Dec 02 2019)
+3.[E][ ] meeting (from: Dec 02 2019, 2:00 PM to: Dec 02 2019, 4:00 PM)
 Bye. Hope to see you again soon!
 ```
 
@@ -591,8 +717,8 @@ Bye. Hope to see you again soon!
 
 ```text
 T | 1 | read book
-D | 0 | return book | Sunday
-E | 0 | project meeting | Mon 2pm | Tue 4pm
+D | 0 | return book | 2019-12-02T00:00
+E | 0 | project meeting | 2019-12-02T14:00 | 2019-12-03T16:00
 ```
 
 **Input**
@@ -607,9 +733,57 @@ bye
 ```text
 Here are the tasks in your list:
 1.[T][X] read book
-2.[D][ ] return book (by: Sunday)
-3.[E][ ] project meeting (from: Mon 2pm to: Tue 4pm)
+2.[D][ ] return book (by: Dec 02 2019)
+3.[E][ ] project meeting (from: Dec 02 2019, 2:00 PM to: Dec 03 2019, 4:00 PM)
 Bye. Hope to see you again soon!
+```
+
+### LOAD-02 — Delete malformed stored data after confirmation
+
+**Reason:** Decision-table testing covers the affirmative recovery path for an unreadable task record.
+
+**Initial data file**
+
+```text
+D | 0 | return book | not-a-date
+```
+
+**Input**
+
+```text
+yes
+bye
+```
+
+**Expected normalized output**
+
+```text
+The stored task data is invalid. Delete the data file? (y/n)
+The invalid data file was deleted. Ekko will start with an empty task list.
+Bye. Hope to see you again soon!
+```
+
+### LOAD-03 — Keep malformed stored data after declining
+
+**Reason:** Decision-table testing covers a non-affirmative response and verifies the safe, non-destructive path.
+
+**Initial data file**
+
+```text
+invalid task record
+```
+
+**Input**
+
+```text
+n
+```
+
+**Expected normalized output**
+
+```text
+The stored task data is invalid. Delete the data file? (y/n)
+The data file was kept. Ekko will now exit.
 ```
 
 ## `todo`

@@ -1,11 +1,14 @@
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 /**
  * Represents a task that takes place between specified start and end times.
  */
 public class Event extends Task {
-    private final String from;
-    private final String to;
+    private final LocalDateTime from;
+    private final LocalDateTime to;
 
-    public Event(String description, String from, String to) {
+    public Event(String description, LocalDateTime from, LocalDateTime to) {
         super(description);
         this.from = from;
         this.to = to;
@@ -18,8 +21,13 @@ public class Event extends Task {
     }
 
     @Override
+    public boolean occursOn(LocalDate date) {
+        return !date.isBefore(from.toLocalDate()) && !date.isAfter(to.toLocalDate());
+    }
+
+    @Override
     public String toString() {
         return String.format("[E]%s (from: %s to: %s)",
-                super.toString(), from, to);
+                super.toString(), DateTimeParser.format(from), DateTimeParser.format(to));
     }
 }

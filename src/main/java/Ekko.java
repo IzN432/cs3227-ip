@@ -1,4 +1,8 @@
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -11,15 +15,47 @@ public class Ekko {
 
     public static void main(String[] args) throws IOException {
         Ekko instance = new Ekko();
-        instance.mainLoop();
+        if (instance.canStart) {
+            instance.mainLoop();
+        }
     }
 
     private final Scanner scanner;
     private final List<Task> tasks;
+    private final boolean canStart;
 
     public Ekko() throws IOException {
         scanner = new Scanner(System.in);
-        tasks = new ArrayList<>(Storage.loadTasks());
+        List<Task> loadedTasks;
+        boolean startupCanProceed = true;
+        try {
+            loadedTasks = Storage.loadTasks();
+        } catch (IllegalArgumentException | DateTimeException e) {
+            loadedTasks = List.of();
+            startupCanProceed = handleInvalidDataFile();
+        }
+        tasks = new ArrayList<>(loadedTasks);
+        canStart = startupCanProceed;
+    }
+
+    /**
+     * Lets the user decide whether a malformed saved-data file should be deleted.
+     * Deleting the file allows Ekko to start with an empty task list; keeping it
+     * prevents startup so the invalid data is not silently ignored.
+     *
+     * @return {@code true} if the invalid file was deleted and startup can proceed
+     */
+    private boolean handleInvalidDataFile() throws IOException {
+        System.out.println("The stored task data is invalid. Delete the data file? (y/n)");
+        String response = scanner.hasNextLine() ? scanner.nextLine().trim() : "";
+        if (response.equalsIgnoreCase("y") || response.equalsIgnoreCase("yes")) {
+            Storage.deleteDataFile();
+            System.out.println("The invalid data file was deleted. Ekko will start with an empty task list.");
+            return true;
+        } else {
+            System.out.println("The data file was kept. Ekko will now exit.");
+            return false;
+        }
     }
 
     /**
@@ -68,6 +104,7 @@ public class Ekko {
         case TODO -> addTodo(arguments);
         case DEADLINE -> addDeadline(arguments);
         case EVENT -> addEvent(arguments);
+        case AGENDA -> printAgenda(arguments);
         case LIST -> printTasks();
         case MARK -> markTask(arguments);
         case UNMARK -> unmarkTask(arguments);
@@ -95,7 +132,7 @@ public class Ekko {
         } else if (!parsed.containsArgument(ArgumentName.BY) || by.isBlank()) {
             throw new EkkoException("A deadline must have a non-empty /by argument.");
         } else {
-            addTask(new Deadline(parsed.getDescription(), by));
+            addTask(new Deadline(parsed.getDescription(), parseDateTime(by)));
         }
     }
 
@@ -114,7 +151,54 @@ public class Ekko {
         } else if (!parsed.containsArgument(ArgumentName.TO) || to.isBlank()) {
             throw new EkkoException("An event must have a non-empty /to argument.");
         } else {
-            addTask(new Event(parsed.getDescription(), from, to));
+            LocalDateTime start = parseDateTime(from);
+            LocalDateTime end = parseDateTime(to);
+            if (end.isBefore(start)) {
+                throw new EkkoException("An event's /to date/time cannot be before its /from date/time.");
+            }
+            addTask(new Event(parsed.getDescription(), start, end));
+        }
+    }
+
+    /**
+     * Displays deadlines due and events occurring on a specified date.
+     */
+    private void printAgenda(String arguments) throws EkkoException {
+        if (arguments.isBlank()) {
+            throw new EkkoException("Please provide a date for the agenda.");
+        }
+
+        LocalDate date;
+        try {
+            date = DateTimeParser.parseDate(arguments);
+        } catch (DateTimeParseException e) {
+            throw new EkkoException("Please use a valid date such as 2019-10-15 or 2/12/2019.");
+        }
+
+        List<Task> matchingTasks = tasks.stream().filter(task -> task.occursOn(date)).toList();
+        String formattedDate = DateTimeParser.format(date);
+        if (matchingTasks.isEmpty()) {
+            sendMessage("No deadlines or events found on " + formattedDate + ".");
+            return;
+        }
+
+        System.out.println("Here are the deadlines and events on " + formattedDate + ":");
+        for (int i = 0; i < matchingTasks.size(); i++) {
+            System.out.printf("%d.%s%n", i + 1, matchingTasks.get(i));
+        }
+        System.out.println();
+    }
+
+    /**
+     * Parses a command date/time and translates parsing failures into a helpful UI error.
+     */
+    private LocalDateTime parseDateTime(String value) throws EkkoException {
+        try {
+            return DateTimeParser.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new EkkoException(
+                    "Please use a valid date/time such as 2019-10-15 or 2/12/2019 1800."
+            );
         }
     }
 
