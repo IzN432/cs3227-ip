@@ -1,3 +1,7 @@
+package ekko.parser;
+
+import ekko.EkkoException;
+
 /**
  * Interprets a complete line of user input as a command and its arguments.
  */

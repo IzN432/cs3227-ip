@@ -2,6 +2,8 @@
 
 This plan verifies the command-line behaviour implemented in the working tree. Each test starts Ekko in a fresh process, so task state does not carry between tests.
 
+The runner compiles Java sources recursively beneath `src/main/java` and launches the `ekko.Ekko` main class. Package organization does not change the command inputs, expected outputs, or test-design reasons below.
+
 ## Output comparison
 
 The automated runner removes the fixed startup banner, greeting, blank lines, and 80-character separators. It compares all remaining lines exactly, including task numbering, status markers, descriptions, date/time text, and confirmation or error messages. The special input line `<blank>` represents pressing Enter without typing anything.

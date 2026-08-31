@@ -1,3 +1,7 @@
+package ekko.parser;
+
+import ekko.EkkoException;
+
 import java.util.Locale;
 
 /**

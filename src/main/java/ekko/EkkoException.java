@@ -1,3 +1,5 @@
+package ekko;
+
 /**
  * Represents an error caused by a command that Ekko cannot process.
  */

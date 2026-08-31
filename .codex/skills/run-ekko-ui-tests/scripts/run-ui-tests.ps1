@@ -52,7 +52,7 @@ function Run-Ekko([string[]] $inputLines, [string] $workingPath) {
     $processInfo.FileName = "java"
     $processInfo.ArgumentList.Add("-cp")
     $processInfo.ArgumentList.Add($buildPath)
-    $processInfo.ArgumentList.Add("Ekko")
+    $processInfo.ArgumentList.Add("ekko.Ekko")
     $processInfo.RedirectStandardInput = $true
     $processInfo.RedirectStandardOutput = $true
     $processInfo.RedirectStandardError = $true
@@ -83,7 +83,7 @@ function Run-Ekko([string[]] $inputLines, [string] $workingPath) {
 Assert-Java25
 New-Item -ItemType Directory -Force -Path $buildPath | Out-Null
 
-$sources = Get-ChildItem -LiteralPath $sourcePath -Filter "*.java" | ForEach-Object { $_.FullName }
+$sources = Get-ChildItem -LiteralPath $sourcePath -Filter "*.java" -Recurse | ForEach-Object { $_.FullName }
 & javac -d $buildPath @sources
 if ($LASTEXITCODE -ne 0) {
     throw "Compilation failed with exit code $LASTEXITCODE."

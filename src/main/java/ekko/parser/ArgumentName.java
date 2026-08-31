@@ -1,3 +1,5 @@
+package ekko.parser;
+
 /**
  * Represents a slash-prefixed argument recognised by task commands.
  */

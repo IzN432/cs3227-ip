@@ -1,3 +1,7 @@
+package ekko.ui;
+
+import ekko.task.Task;
+
 import java.util.List;
 import java.util.Scanner;
 
