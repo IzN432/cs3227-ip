@@ -6,8 +6,8 @@ deadlines, and events by typing short commands. Your memory can take a break.
 ## Quick start
 
 1. Install **Java 25** and check it with `java -version` in a terminal.
-2. Place the bundled application, `duke.jar`, in a folder where you want to keep your tasks.
-3. Open a terminal in that folder and run `java -jar duke.jar`.
+2. Place the bundled application, `ekko.jar`, in a folder where you want to keep your tasks.
+3. Open a terminal in that folder and run `java -jar ekko.jar`.
 4. In the Ekko window, type `todo read a book` into the bottom field and press **Enter**
    or click **Send**. Wait for the reply, then try `list`.
 

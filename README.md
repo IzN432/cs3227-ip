@@ -85,7 +85,7 @@ To build and run the bundled application:
 
 ```powershell
 .\gradlew.bat shadowJar
-java -jar build/libs/duke.jar
+java -jar build/libs/ekko.jar
 ```
 
 The original console interface remains available by running `ekko.Ekko` directly in IntelliJ.
