@@ -87,6 +87,34 @@ class ArgumentParserTest {
     }
 
     @Test
+    void parse_onlyArgumentName_keepsEmptyDescriptionAndValue() {
+        ParsedArguments parsed = ArgumentParser.parse("/by", Set.of(ArgumentName.BY));
+        assertEquals("", parsed.getDescription());
+        assertTrue(parsed.containsArgument(ArgumentName.BY));
+        assertEquals("", parsed.getArgument(ArgumentName.BY));
+    }
+
+    @Test
+    void parse_punctuationAfterName_preservesPunctuationInValue() {
+        ParsedArguments parsed = ArgumentParser.parse("meeting /from:Monday /to-Tuesday",
+                Set.of(ArgumentName.FROM, ArgumentName.TO));
+        assertEquals("meeting", parsed.getDescription());
+        assertEquals(":Monday", parsed.getArgument(ArgumentName.FROM));
+        assertEquals("-Tuesday", parsed.getArgument(ArgumentName.TO));
+    }
+
+    @Test
+    void parse_interleavedDuplicates_preservesOtherValuesAndLastEmptyValue() {
+        ParsedArguments parsed = ArgumentParser.parse(
+                "meeting /from Monday /to Tuesday /from Wednesday /to",
+                Set.of(ArgumentName.FROM, ArgumentName.TO));
+        assertEquals("meeting", parsed.getDescription());
+        assertEquals("Wednesday", parsed.getArgument(ArgumentName.FROM));
+        assertTrue(parsed.containsArgument(ArgumentName.TO));
+        assertEquals("", parsed.getArgument(ArgumentName.TO));
+    }
+
+    @Test
     void parse_unallowedArgumentInValue_preservesIt() {
         ParsedArguments parsed = ArgumentParser.parse("book /by Monday /to Tuesday", Set.of(ArgumentName.BY));
         assertEquals("Monday /to Tuesday", parsed.getArgument(ArgumentName.BY));

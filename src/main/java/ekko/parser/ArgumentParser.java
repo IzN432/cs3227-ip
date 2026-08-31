@@ -26,11 +26,39 @@ public final class ArgumentParser {
      */
     public static ParsedArguments parse(String argumentString, Set<ArgumentName> availableArguments) {
         ParsedArguments parsedArguments = new ParsedArguments();
+        parsedArguments.setDescription(argumentString.trim());
         if (availableArguments.isEmpty()) {
-            parsedArguments.setDescription(argumentString.trim());
             return parsedArguments;
         }
 
+        Matcher matcher = createArgumentPattern(availableArguments).matcher(argumentString);
+        if (!matcher.find()) {
+            return parsedArguments;
+        }
+        parsedArguments.setDescription(argumentString.substring(0, matcher.start()).trim());
+
+        boolean hasNextArgument;
+        do {
+            ArgumentName argument = ArgumentName.fromText(matcher.group(1));
+            // The regex is built only from this command's allowed names.
+            assert availableArguments.contains(argument) : "Matched argument must be allowed by the command";
+            int valueStartIndex = matcher.end();
+            hasNextArgument = matcher.find();
+            int valueEndIndex = hasNextArgument ? matcher.start() : argumentString.length();
+            // Adjacent arguments and an argument at end-of-input may have empty values.
+            assert valueStartIndex <= valueEndIndex : "Argument value boundaries must not overlap";
+            String value = argumentString.substring(valueStartIndex, valueEndIndex).trim();
+            parsedArguments.setArgument(argument, value);
+        } while (hasNextArgument);
+
+        return parsedArguments;
+    }
+
+    /**
+     * Builds a pattern matching only allowed names at whitespace and word boundaries.
+     * Longer names are tried first, and names are quoted as literal regex text.
+     */
+    private static Pattern createArgumentPattern(Set<ArgumentName> availableArguments) {
         String allowedNames = availableArguments.stream()
                 .sorted(Comparator.comparingInt(
                         (ArgumentName argumentName) -> argumentName.getText().length()
@@ -39,47 +67,8 @@ public final class ArgumentParser {
                 .map(Pattern::quote)
                 .collect(Collectors.joining("|"));
 
-        Pattern argumentPattern = Pattern.compile(
+        return Pattern.compile(
                 "(?<!\\S)/(" + allowedNames + ")\\b"
         );
-
-        Matcher matcher = argumentPattern.matcher(argumentString);
-
-        String description = argumentString.trim();
-        ArgumentName previousName = null;
-        int previousValueStartIndex = -1;
-
-        while (matcher.find()) {
-            ArgumentName argument = ArgumentName.fromText(matcher.group(1));
-            // The regex is built only from this command's allowed names.
-            assert availableArguments.contains(argument) : "Matched argument must be allowed by the command";
-            if (previousName == null) {
-                description = argumentString.substring(0, matcher.start()).trim();
-            } else {
-                // A previous match must establish a valid, non-overlapping value boundary.
-                assert previousValueStartIndex >= 0 && previousValueStartIndex <= matcher.start()
-                        : "Previous value must start before the next argument";
-                String previousValue = argumentString.substring(
-                        previousValueStartIndex,
-                        matcher.start()
-                ).trim();
-                parsedArguments.setArgument(previousName, previousValue);
-            }
-            previousName = argument;
-            previousValueStartIndex = matcher.end();
-        }
-        parsedArguments.setDescription(description);
-
-        if (previousName != null) {
-            // A final argument may have an empty value, so the end-of-input index is valid.
-            assert previousValueStartIndex >= 0 && previousValueStartIndex <= argumentString.length()
-                    : "Final value must start within the input or at its end";
-            String previousValue = argumentString.substring(
-                    previousValueStartIndex
-            ).trim();
-            parsedArguments.setArgument(previousName, previousValue);
-        }
-
-        return parsedArguments;
     }
 }
