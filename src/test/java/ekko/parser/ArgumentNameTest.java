@@ -11,14 +11,16 @@ import org.junit.jupiter.api.Test;
 class ArgumentNameTest {
     @Test
     void fromText_supportedNames_returnsEnum() {
-        assertEquals(ArgumentName.BY, ArgumentName.fromText("by"));
-        assertEquals(ArgumentName.FROM, ArgumentName.fromText("from"));
-        assertEquals(ArgumentName.TO, ArgumentName.fromText("to"));
+        assertEquals(ArgumentName.DESC, ArgumentName.fromText("desc"));
+        assertEquals(ArgumentName.PRICE, ArgumentName.fromText("price"));
+        assertEquals(ArgumentName.END, ArgumentName.fromText("end"));
+        assertEquals(ArgumentName.LOW, ArgumentName.fromText("low"));
+        assertEquals(ArgumentName.HIGH, ArgumentName.fromText("high"));
     }
 
     @Test
     void fromText_unknownOrNonExactName_throwsException() {
-        for (String input : new String[] {"", "/by", "BY", "from ", "about"}) {
+        for (String input : new String[] {"", "/desc", "DESC", "price ", "about"}) {
             assertThrows(IllegalArgumentException.class, () -> ArgumentName.fromText(input));
         }
     }

@@ -1,7 +1,5 @@
 package ekko;
 
-import java.io.IOException;
-
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -26,9 +24,11 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import ekko.listing.ListingStore;
 import ekko.parser.Command;
-import ekko.storage.Storage;
 import ekko.ui.GuiUi;
+import ekko.users.User;
+import ekko.users.UserStore;
 
 /**
  * Displays a resizable JavaFX conversation window for the Ekko chatbot.
@@ -40,21 +40,15 @@ public class Main extends Application {
     private ScrollPane conversationScroll;
     private TextField input;
     private Button send;
-    private Ekko ekko;
+    private Marketplace marketplace;
     private Label status;
     private Label identity;
+    private Label userLabel;
     /** Schedules a reply without blocking the JavaFX application thread. */
     private PauseTransition pendingReply;
 
     @Override
     public void start(Stage stage) {
-        start(stage, new Storage());
-    }
-
-    /**
-     * Opens the window using supplied storage, allowing isolated GUI tests.
-     */
-    void start(Stage stage, Storage storage) {
         VBox root = createContent();
         stage.setTitle("Ekko");
         stage.setScene(new Scene(root, 720, 540));
@@ -64,7 +58,7 @@ public class Main extends Application {
         stage.setOnHidden(event -> stopSession());
         stage.show();
 
-        startSession(stage, storage);
+        startSession();
     }
 
     /**
@@ -74,9 +68,15 @@ public class Main extends Application {
         identity = new Label("EKKO ONLINE");
         identity.setId("identityStatus");
         identity.getStyleClass().add("app-title");
-        Label subtitle = new Label("Human task supervision.");
+        Label subtitle = new Label("Ekko is here for your shopping.");
         subtitle.getStyleClass().add("muted");
-        VBox heading = new VBox(4, identity, subtitle);
+        VBox headingText = new VBox(4, identity, subtitle);
+        HBox.setHgrow(headingText, Priority.ALWAYS);
+        userLabel = new Label();
+        userLabel.setId("userLabel");
+        userLabel.getStyleClass().add("app-title");
+        HBox heading = new HBox(headingText, userLabel);
+        heading.setAlignment(Pos.TOP_LEFT);
         ScrollPane suggestions = createCommandSuggestions();
         TitledPane commandHelp = new TitledPane("Command reference", suggestions);
         commandHelp.setId("commandHelp");
@@ -190,24 +190,19 @@ public class Main extends Application {
     }
 
     /**
-     * Loads saved tasks after the window is shown, disabling input if startup fails.
+     * Creates an in-memory marketplace session with a placeholder user.
+     * Login screen and persistent storage will be wired in later.
      */
-    private void startSession(Stage stage, Storage storage) {
+    private void startSession() {
         GuiUi ui = new GuiUi(message -> appendMessage("Ekko", message),
-                message -> appendMessage("Error", message), () -> confirmRecovery(stage));
-        try {
-            ekko = new Ekko(ui, storage);
-            if (ekko.canStart()) {
-                ui.showWelcome("Ekko");
-                input.requestFocus();
-            } else {
-                stopSession();
-            }
-        } catch (IOException e) {
-            appendMessage("Error", "Could not open the task file: " + e.getMessage()
-                    + "\nPlease fix the file access problem and restart Ekko.");
-            stopSession();
-        }
+                message -> appendMessage("Error", message), () -> "yes");
+        User currentUser = new User("user", "password");
+        UserStore userStore = new UserStore(java.util.List.of(currentUser));
+        ListingStore listingStore = new ListingStore(java.util.List.of());
+        marketplace = new Marketplace(ui, currentUser, userStore, listingStore);
+        userLabel.setText(currentUser.getUsername());
+        ui.showWelcome("Ekko");
+        input.requestFocus();
     }
 
     /**
@@ -239,17 +234,10 @@ public class Main extends Application {
      */
     private void executeCommand(String command) {
         // Only a successfully initialized session may schedule a command callback.
-        assert ekko != null && ekko.canStart() : "Delayed commands require a ready chatbot";
+        assert marketplace != null : "Delayed commands require a ready marketplace";
         // The submission lock must remain held throughout the delay and command execution.
         assert input.isDisabled() && send.isDisabled() : "Input must stay disabled until the reply completes";
-        try {
-            if (ekko.processCommand(command)) {
-                stopSession();
-                return;
-            }
-        } catch (IOException e) {
-            appendMessage("Error", "Could not save your changes: " + e.getMessage()
-                    + "\nChanges may not be saved. Fix the file access problem and restart Ekko.");
+        if (marketplace.processCommand(command)) {
             stopSession();
             return;
         }
@@ -302,6 +290,7 @@ public class Main extends Application {
         input.setDisable(true);
         send.setDisable(true);
         identity.setText("EKKO OFFLINE");
+        userLabel.setText("");
         input.setPromptText("Session ended. Close this window to exit.");
     }
 

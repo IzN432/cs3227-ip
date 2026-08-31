@@ -3,21 +3,23 @@ package ekko.parser;
 import java.util.Locale;
 
 /**
- * Defines supported commands and interface-independent reference text.
+ * Defines the commands supported by the Ekko marketplace and their interface metadata.
  */
 public enum Command {
-    TODO("<description>", "Add a task without a date."),
-    DEADLINE("<description> /by <date/time>", "Add a task with a due date."),
-    EVENT("<description> /from <date/time> /to <date/time>", "Schedule a task with a start and end."),
-    AGENDA("<date>", "Show tasks scheduled for a date."),
-    LIST("", "Show all tasks and their task numbers."),
-    FIND("<keyword>", "Search task descriptions."),
-    MARK("<task number>", "Mark a task as done."),
-    UNMARK("<task number>", "Mark a task as not done."),
-    DELETE("<task number>", "Remove a task from your list."),
+    BIN("<name> /desc <description> /price <price>", "List an item for immediate purchase."),
+    AUCTION("<name> /desc <description> /price <starting bid> /end <date/time>",
+            "List an item for auction with a deadline."),
+    BID("<uuid> /price <amount>", "Place a bid on an auction."),
+    BUY("<uuid>", "Purchase a BIN listing immediately."),
+    LIST("", "Browse all active listings."),
+    FIND("<keyword>", "Search listings by name or description."),
+    MYLISTINGS("", "View your own listings."),
+    TOPUP("<amount>", "Add coins to your balance."),
+    WITHDRAW("<amount>", "Withdraw coins from your balance."),
+    BALANCE("", "Check your current coin balance."),
+    BECOMESELLER("", "Apply for seller status."),
     BYE("", "End the session.");
 
-    /** Human-readable argument syntax; empty for commands without arguments. */
     private final String usage;
     private final String description;
 
@@ -27,9 +29,7 @@ public enum Command {
     }
 
     /**
-     * Returns the lowercase command word shared by parsing and help displays.
-     *
-     * @return command word independent of the system locale.
+     * Returns the lowercase command word used for parsing and display.
      */
     public String getWord() {
         return name().toLowerCase(Locale.ROOT);
@@ -44,11 +44,11 @@ public enum Command {
     }
 
     /**
-     * Converts a command word into its enum value.
+     * Converts a command word to its enum value.
      *
-     * @param commandWord command word entered by the user.
+     * @param commandWord word entered by the user.
      * @return the matching command.
-     * @throws IllegalArgumentException if the command word is null or not supported.
+     * @throws IllegalArgumentException if the word is not a supported command.
      */
     public static Command from(String commandWord) {
         for (Command command : values()) {

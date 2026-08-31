@@ -2,10 +2,7 @@ package ekko.ui;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.List;
 import java.util.Scanner;
-
-import ekko.task.Task;
 
 /**
  * Handles all console input and output for Ekko.
@@ -73,7 +70,7 @@ public class Ui {
                 + "|  |____ |  .  \\  |  .  \\  |  `--'  | \n"
                 + "|_______||__|\\__\\ |__|\\__\\  \\______/  \n";
         output.println(banner);
-        showMessage(String.format("%s online. What's on your agenda?", name));
+        showMessage(String.format("%s online. Welcome to the marketplace.", name));
         showSeparator();
     }
 
@@ -94,34 +91,6 @@ public class Ui {
      */
     public void showError(String message) {
         showMessage(message);
-    }
-
-    /**
-     * Displays numbered tasks with the supplied heading.
-     *
-     * @param heading text shown before the tasks.
-     * @param tasks tasks to display.
-     */
-    public void showTasks(String heading, List<Task> tasks) {
-        showTasks(heading, tasks, tasks);
-    }
-
-    /**
-     * Displays matching tasks using their current numbers and order in the full task list.
-     *
-     * @param heading text shown before the tasks.
-     * @param matchingTasks task instances selected from the full list.
-     * @param allTasks full task list whose positions define the displayed numbers.
-     */
-    public void showTasks(String heading, List<Task> matchingTasks, List<Task> allTasks) {
-        StringBuilder message = new StringBuilder(heading);
-        for (int i = 0; i < allTasks.size(); i++) {
-            Task task = allTasks.get(i);
-            if (matchingTasks.contains(task)) {
-                message.append('\n').append(i + 1).append('.').append(task);
-            }
-        }
-        showMessage(message.toString());
     }
 
     /**

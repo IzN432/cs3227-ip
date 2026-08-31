@@ -15,124 +15,124 @@ import org.junit.jupiter.api.Test;
 class ArgumentParserTest {
     @Test
     void parse_noAllowedArguments_keepsAllText() {
-        ParsedArguments parsed = ArgumentParser.parse("  read /by tomorrow  ", Set.of());
-        assertEquals("read /by tomorrow", parsed.getDescription());
-        assertFalse(parsed.containsArgument(ArgumentName.BY));
+        ParsedArguments parsed = ArgumentParser.parse("  lamp /price 50  ", Set.of());
+        assertEquals("lamp /price 50", parsed.getDescription());
+        assertFalse(parsed.containsArgument(ArgumentName.PRICE));
     }
 
     @Test
     void parse_blankInput_returnsEmptyDescriptionAndNoArguments() {
         for (String input : new String[] {"", " \t "}) {
-            ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.BY));
+            ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.PRICE));
             assertEquals("", parsed.getDescription());
-            assertFalse(parsed.containsArgument(ArgumentName.BY));
+            assertFalse(parsed.containsArgument(ArgumentName.PRICE));
         }
     }
 
     @Test
     void parse_noRecognizedArguments_preservesDescription() {
-        ParsedArguments parsed = ArgumentParser.parse(" read /about Java ", Set.of(ArgumentName.BY));
-        assertEquals("read /about Java", parsed.getDescription());
-        assertFalse(parsed.containsArgument(ArgumentName.BY));
+        ParsedArguments parsed = ArgumentParser.parse(" lamp /about Java ", Set.of(ArgumentName.PRICE));
+        assertEquals("lamp /about Java", parsed.getDescription());
+        assertFalse(parsed.containsArgument(ArgumentName.PRICE));
     }
 
     @Test
     void parse_singleArgument_trimsValueAndKeepsInternalSpaces() {
-        ParsedArguments parsed = ArgumentParser.parse(" read  book \t/by tomorrow  evening ",
-                Set.of(ArgumentName.BY));
-        assertEquals("read  book", parsed.getDescription());
-        assertEquals("tomorrow  evening", parsed.getArgument(ArgumentName.BY));
+        ParsedArguments parsed = ArgumentParser.parse(" vintage  lamp \t/price 50  coins ",
+                Set.of(ArgumentName.PRICE));
+        assertEquals("vintage  lamp", parsed.getDescription());
+        assertEquals("50  coins", parsed.getArgument(ArgumentName.PRICE));
     }
 
     @Test
     void parse_multipleArguments_acceptsEitherOrder() {
         for (String input : new String[] {
-                "meeting /from Monday morning /to Tuesday evening",
-                "meeting /to Tuesday evening /from Monday morning"
+                "lamp /low 10 /high 100",
+                "lamp /high 100 /low 10"
         }) {
-            ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.FROM, ArgumentName.TO));
-            assertEquals("meeting", parsed.getDescription());
-            assertEquals("Monday morning", parsed.getArgument(ArgumentName.FROM));
-            assertEquals("Tuesday evening", parsed.getArgument(ArgumentName.TO));
+            ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.LOW, ArgumentName.HIGH));
+            assertEquals("lamp", parsed.getDescription());
+            assertEquals("10", parsed.getArgument(ArgumentName.LOW));
+            assertEquals("100", parsed.getArgument(ArgumentName.HIGH));
         }
     }
 
     @Test
     void parse_argumentAtStart_allowsEmptyDescription() {
-        ParsedArguments parsed = ArgumentParser.parse("/by tomorrow", Set.of(ArgumentName.BY));
+        ParsedArguments parsed = ArgumentParser.parse("/price 50", Set.of(ArgumentName.PRICE));
         assertEquals("", parsed.getDescription());
-        assertEquals("tomorrow", parsed.getArgument(ArgumentName.BY));
+        assertEquals("50", parsed.getArgument(ArgumentName.PRICE));
     }
 
     @Test
     void parse_emptyValues_remainPresent() {
-        ParsedArguments parsed = ArgumentParser.parse("meeting /from /to", Set.of(ArgumentName.FROM, ArgumentName.TO));
-        assertTrue(parsed.containsArgument(ArgumentName.FROM));
-        assertTrue(parsed.containsArgument(ArgumentName.TO));
-        assertEquals("", parsed.getArgument(ArgumentName.FROM));
-        assertEquals("", parsed.getArgument(ArgumentName.TO));
+        ParsedArguments parsed = ArgumentParser.parse("lamp /low /high", Set.of(ArgumentName.LOW, ArgumentName.HIGH));
+        assertTrue(parsed.containsArgument(ArgumentName.LOW));
+        assertTrue(parsed.containsArgument(ArgumentName.HIGH));
+        assertEquals("", parsed.getArgument(ArgumentName.LOW));
+        assertEquals("", parsed.getArgument(ArgumentName.HIGH));
     }
 
     @Test
     void parse_duplicateArgument_rejectsInput() {
         assertThrows(IllegalArgumentException.class,
-                () -> ArgumentParser.parse("book /by Monday /by Tuesday", Set.of(ArgumentName.BY)));
+                () -> ArgumentParser.parse("lamp /price 10 /price 20", Set.of(ArgumentName.PRICE)));
     }
 
     @Test
     void parse_duplicateEndingEmpty_rejectsInput() {
         assertThrows(IllegalArgumentException.class,
-                () -> ArgumentParser.parse("book /by Monday /by", Set.of(ArgumentName.BY)));
+                () -> ArgumentParser.parse("lamp /price 10 /price", Set.of(ArgumentName.PRICE)));
     }
 
     @Test
     void parse_onlyArgumentName_keepsEmptyDescriptionAndValue() {
-        ParsedArguments parsed = ArgumentParser.parse("/by", Set.of(ArgumentName.BY));
+        ParsedArguments parsed = ArgumentParser.parse("/price", Set.of(ArgumentName.PRICE));
         assertEquals("", parsed.getDescription());
-        assertTrue(parsed.containsArgument(ArgumentName.BY));
-        assertEquals("", parsed.getArgument(ArgumentName.BY));
+        assertTrue(parsed.containsArgument(ArgumentName.PRICE));
+        assertEquals("", parsed.getArgument(ArgumentName.PRICE));
     }
 
     @Test
     void parse_punctuationAfterName_preservesPunctuationInValue() {
-        ParsedArguments parsed = ArgumentParser.parse("meeting /from:Monday /to-Tuesday",
-                Set.of(ArgumentName.FROM, ArgumentName.TO));
-        assertEquals("meeting", parsed.getDescription());
-        assertEquals(":Monday", parsed.getArgument(ArgumentName.FROM));
-        assertEquals("-Tuesday", parsed.getArgument(ArgumentName.TO));
+        ParsedArguments parsed = ArgumentParser.parse("lamp /low:10 /high-100",
+                Set.of(ArgumentName.LOW, ArgumentName.HIGH));
+        assertEquals("lamp", parsed.getDescription());
+        assertEquals(":10", parsed.getArgument(ArgumentName.LOW));
+        assertEquals("-100", parsed.getArgument(ArgumentName.HIGH));
     }
 
     @Test
     void parse_interleavedDuplicates_rejectsInput() {
         assertThrows(IllegalArgumentException.class, () -> ArgumentParser.parse(
-                "meeting /from Monday /to Tuesday /from Wednesday /to",
-                Set.of(ArgumentName.FROM, ArgumentName.TO)));
+                "lamp /low 10 /high 100 /low 20 /high",
+                Set.of(ArgumentName.LOW, ArgumentName.HIGH)));
     }
 
     @Test
     void parse_unallowedArgumentInValue_preservesIt() {
-        ParsedArguments parsed = ArgumentParser.parse("book /by Monday /to Tuesday", Set.of(ArgumentName.BY));
-        assertEquals("Monday /to Tuesday", parsed.getArgument(ArgumentName.BY));
-        assertFalse(parsed.containsArgument(ArgumentName.TO));
+        ParsedArguments parsed = ArgumentParser.parse("lamp /price 50 /end 2026-09-10", Set.of(ArgumentName.PRICE));
+        assertEquals("50 /end 2026-09-10", parsed.getArgument(ArgumentName.PRICE));
+        assertFalse(parsed.containsArgument(ArgumentName.END));
     }
 
     @Test
     void parse_embeddedOrLongerSlashWord_doesNotMatch() {
-        for (String input : new String[] {"read/by Monday", "read /bypass road", "read /by2 days",
-                "read /by_name", "read /BY Monday", "https://site/by"}) {
-            ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.BY));
+        for (String input : new String[] {"lamp/price 50", "lamp /pricetag 50", "lamp /price2 50",
+                "lamp /price_tag", "lamp /PRICE 50", "https://site/price"}) {
+            ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.PRICE));
             assertEquals(input, parsed.getDescription());
-            assertFalse(parsed.containsArgument(ArgumentName.BY), input);
+            assertFalse(parsed.containsArgument(ArgumentName.PRICE), input);
         }
     }
 
     @Test
     void parse_allAllowedArguments_extractsEachWithoutChangingAllowedSet() {
-        Set<ArgumentName> allowed = Set.of(ArgumentName.BY, ArgumentName.FROM, ArgumentName.TO);
-        ParsedArguments parsed = ArgumentParser.parse("task /by one /from two /to three", allowed);
-        assertEquals("one", parsed.getArgument(ArgumentName.BY));
-        assertEquals("two", parsed.getArgument(ArgumentName.FROM));
-        assertEquals("three", parsed.getArgument(ArgumentName.TO));
+        Set<ArgumentName> allowed = Set.of(ArgumentName.DESC, ArgumentName.PRICE, ArgumentName.END);
+        ParsedArguments parsed = ArgumentParser.parse("lamp /desc nice item /price 50 /end 2026-09-10", allowed);
+        assertEquals("nice item", parsed.getArgument(ArgumentName.DESC));
+        assertEquals("50", parsed.getArgument(ArgumentName.PRICE));
+        assertEquals("2026-09-10", parsed.getArgument(ArgumentName.END));
         assertEquals(3, allowed.size());
     }
 }

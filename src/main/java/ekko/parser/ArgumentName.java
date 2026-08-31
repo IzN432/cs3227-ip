@@ -1,12 +1,18 @@
 package ekko.parser;
 
 /**
- * Represents a slash-prefixed argument recognized by task commands.
+ * Defines the slash-prefixed argument names recognised by marketplace commands.
  */
 public enum ArgumentName {
-    BY("by"),
-    FROM("from"),
-    TO("to");
+    DESC("desc"),
+    PRICE("price"),
+    END("end"),
+    TYPE("type"),
+    ACTIVE("active"),
+    SOLD("sold"),
+    MINE("mine"),
+    LOW("low"),
+    HIGH("high");
 
     private final String text;
 
@@ -19,18 +25,18 @@ public enum ArgumentName {
     }
 
     /**
-     * Finds the argument name represented by parsed command text.
+     * Converts a slash-argument word to its enum value.
      *
-     * @param text argument name without its leading slash.
+     * @param text argument word without the leading slash.
      * @return the matching argument name.
-     * @throws IllegalArgumentException if the text is not a recognized argument.
+     * @throws IllegalArgumentException if the word is not a recognised argument.
      */
     public static ArgumentName fromText(String text) {
-        for (ArgumentName argumentName : values()) {
-            if (argumentName.text.equals(text)) {
-                return argumentName;
+        for (ArgumentName name : values()) {
+            if (name.text.equals(text)) {
+                return name;
             }
         }
-        throw new IllegalArgumentException("Unknown argument name: " + text);
+        throw new IllegalArgumentException("Unknown argument: /" + text);
     }
 }
