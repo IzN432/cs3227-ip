@@ -150,6 +150,29 @@ class EkkoTest {
     }
 
     @Test
+    void mainLoop_multipleDatedTaskErrors_preservesValidationOrderAndSavedTasks() throws IOException {
+        Path file = directory.resolve("tasks.txt");
+        String savedTasks = "T | 0 | keep\n";
+        Files.writeString(file, savedTasks);
+        String[][] invalidCommands = {
+            {"deadline /by bad", "The description of a deadline cannot be empty."},
+            {"deadline /by", "The description of a deadline cannot be empty."},
+            {"event /from bad /to bad", "The description of an event cannot be empty."},
+            {"event meeting", "An event must have a non-empty /from argument."},
+            {"event meeting /to bad", "An event must have a non-empty /from argument."},
+            {"event meeting /from bad", "An event must have a non-empty /to argument."},
+            {"event meeting /from bad /to", "An event must have a non-empty /to argument."}
+        };
+
+        for (String[] invalidCommand : invalidCommands) {
+            String output = runLoop(new Storage(file), invalidCommand[0] + "\nlist\nbye\n");
+            assertEquals(invalidCommand[1] + "\nHere are the tasks in your list:\n1.[T][ ] keep\n"
+                    + "Bye. Hope to see you again soon!", normalize(output), invalidCommand[0]);
+            assertEquals(savedTasks, Files.readString(file), invalidCommand[0]);
+        }
+    }
+
+    @Test
     void mainLoop_equalEventEndpoints_acceptsAndPersistsEvent() throws IOException {
         Storage storage = new Storage(directory.resolve("tasks.txt"));
         String output = runLoop(storage,

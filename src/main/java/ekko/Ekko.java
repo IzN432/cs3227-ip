@@ -193,11 +193,12 @@ public class Ekko {
 
         if (parsed.getDescription().isBlank()) {
             throw new EkkoException("The description of a deadline cannot be empty.");
-        } else if (!parsed.containsArgument(ArgumentName.BY) || by.isBlank()) {
-            throw new EkkoException("A deadline must have a non-empty /by argument.");
-        } else {
-            addTask(new Deadline(parsed.getDescription(), parseDateTime(by)));
         }
+        if (!parsed.containsArgument(ArgumentName.BY) || by.isBlank()) {
+            throw new EkkoException("A deadline must have a non-empty /by argument.");
+        }
+
+        addTask(new Deadline(parsed.getDescription(), parseDateTime(by)));
     }
 
     /**
@@ -213,18 +214,20 @@ public class Ekko {
 
         if (parsed.getDescription().isBlank()) {
             throw new EkkoException("The description of an event cannot be empty.");
-        } else if (!parsed.containsArgument(ArgumentName.FROM) || from.isBlank()) {
-            throw new EkkoException("An event must have a non-empty /from argument.");
-        } else if (!parsed.containsArgument(ArgumentName.TO) || to.isBlank()) {
-            throw new EkkoException("An event must have a non-empty /to argument.");
-        } else {
-            LocalDateTime start = parseDateTime(from);
-            LocalDateTime end = parseDateTime(to);
-            if (end.isBefore(start)) {
-                throw new EkkoException("An event's /to date/time cannot be before its /from date/time.");
-            }
-            addTask(new Event(parsed.getDescription(), start, end));
         }
+        if (!parsed.containsArgument(ArgumentName.FROM) || from.isBlank()) {
+            throw new EkkoException("An event must have a non-empty /from argument.");
+        }
+        if (!parsed.containsArgument(ArgumentName.TO) || to.isBlank()) {
+            throw new EkkoException("An event must have a non-empty /to argument.");
+        }
+
+        LocalDateTime start = parseDateTime(from);
+        LocalDateTime end = parseDateTime(to);
+        if (end.isBefore(start)) {
+            throw new EkkoException("An event's /to date/time cannot be before its /from date/time.");
+        }
+        addTask(new Event(parsed.getDescription(), start, end));
     }
 
     /**
