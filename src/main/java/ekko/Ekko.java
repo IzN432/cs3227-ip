@@ -136,6 +136,7 @@ public class Ekko {
             case EVENT -> addEvent(arguments);
             case AGENDA -> printAgenda(arguments);
             case LIST -> printTasks();
+            case FIND -> printMatchingTasks(arguments);
             case MARK -> markTask(arguments);
             case UNMARK -> unmarkTask(arguments);
             case DELETE -> deleteTask(arguments);
@@ -332,6 +333,18 @@ public class Ekko {
             } catch (NumberFormatException e) {
                 throw new EkkoException("Please provide a valid task number.");
             }
+        }
+    }
+
+    /**
+     * Displays tasks whose descriptions contain the supplied case-sensitive search text.
+     */
+    private void printMatchingTasks(String arguments) throws EkkoException {
+        List<Task> matchingTasks = tasks.find(arguments);
+        if (matchingTasks.isEmpty()) {
+            ui.showMessage("No matching tasks found!");
+        } else {
+            ui.showTasks("Here are the matching tasks in your list:", matchingTasks);
         }
     }
 

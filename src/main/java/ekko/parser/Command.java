@@ -13,6 +13,7 @@ public enum Command {
     EVENT,
     AGENDA,
     LIST,
+    FIND,
     MARK,
     UNMARK,
     DELETE,

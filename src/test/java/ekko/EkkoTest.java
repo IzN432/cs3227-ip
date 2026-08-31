@@ -107,6 +107,31 @@ class EkkoTest {
     }
 
     @Test
+    void mainLoop_find_displaysNumberedMatchesWithoutChangingSavedTasks() throws IOException {
+        Path file = directory.resolve("tasks.txt");
+        String savedTasks = "T | 0 | exercise\nT | 1 | read book\n"
+                + "D | 0 | return book | 2026-09-01T00:00\n";
+        Files.writeString(file, savedTasks);
+
+        String output = runLoop(new Storage(file), "find book\nfind   read book  \nbye\n");
+
+        assertEquals("Here are the matching tasks in your list:\n"
+                + "1.[T][X] read book\n2.[D][ ] return book (by: Sep 01 2026)\n"
+                + "Here are the matching tasks in your list:\n1.[T][X] read book\n"
+                + "Bye. Hope to see you again soon!", normalize(output));
+        assertEquals(savedTasks, Files.readString(file));
+    }
+
+    @Test
+    void mainLoop_findEmptyOrBlank_reportsOutcomeAndContinuesWithoutSaving() throws IOException {
+        Path file = directory.resolve("tasks.txt");
+        String output = runLoop(new Storage(file), "find book\nfind\nfind \t \nbye\n");
+        assertEquals("No matching tasks found!\nPlease provide a keyword to find.\n"
+                + "Please provide a keyword to find.\nBye. Hope to see you again soon!", normalize(output));
+        assertFalse(Files.exists(file));
+    }
+
+    @Test
     void mainLoop_equalEventEndpoints_acceptsAndPersistsEvent() throws IOException {
         Storage storage = new Storage(directory.resolve("tasks.txt"));
         String output = runLoop(storage,

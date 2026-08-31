@@ -83,6 +83,21 @@ public class TaskList {
         return tasks.stream().filter(task -> task.occursOn(date)).toList();
     }
 
+    /**
+     * Finds tasks whose descriptions contain the exact, case-sensitive search text.
+     * Completion markers, task types, and dates are excluded from matching.
+     *
+     * @param keyword nonblank substring to find in task descriptions.
+     * @return an immutable list of matching tasks in their original order.
+     * @throws EkkoException if the search text is blank.
+     */
+    public List<Task> find(String keyword) throws EkkoException {
+        if (keyword.isBlank()) {
+            throw new EkkoException("Please provide a keyword to find.");
+        }
+        return tasks.stream().filter(task -> task.getDescription().contains(keyword)).toList();
+    }
+
     private Task get(int taskNumber) throws EkkoException {
         return tasks.get(toIndex(taskNumber));
     }

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import ekko.EkkoException;
 
 /**
- * Tests list ownership, one-based indexing, state transitions, and agenda queries.
+ * Tests list ownership, one-based indexing, state transitions, and task queries.
  */
 class TaskListTest {
     @Test
@@ -104,5 +104,39 @@ class TaskListTest {
         assertEquals(4, tasks.size());
         assertTrue(tasks.findOn(date.plusDays(10)).isEmpty());
         assertTrue(new TaskList(List.of()).findOn(date).isEmpty());
+    }
+
+    @Test
+    void find_mixedTasks_matchesDescriptionsAndPreservesState() throws EkkoException {
+        LocalDate date = LocalDate.of(2026, 9, 1);
+        Todo todo = new Todo("read book");
+        todo.setMarked(true);
+        Deadline deadline = new Deadline("return books", date.atStartOfDay());
+        Event event = new Event("book club", date.atStartOfDay(), date.atTime(18, 0));
+        List<Task> original = List.of(new Todo("exercise"), todo, deadline, event, new Todo("Book"));
+        TaskList tasks = new TaskList(original);
+
+        List<Task> matches = tasks.find("book");
+        assertEquals(List.of(todo, deadline, event), matches);
+        assertEquals(List.of(deadline), tasks.find("return book"));
+        assertThrows(UnsupportedOperationException.class, matches::clear);
+        assertEquals(original, tasks.asList());
+        assertTrue(todo.isMarked());
+        assertFalse(deadline.isMarked());
+        assertFalse(event.isMarked());
+
+        for (String keyword : List.of("BOOK", "missing", "[T]", "[X]", "2026", "by:", "from:")) {
+            assertTrue(tasks.find(keyword).isEmpty(), keyword);
+        }
+        assertTrue(new TaskList(List.of()).find("book").isEmpty());
+    }
+
+    @Test
+    void find_blankKeyword_rejectsSearch() {
+        TaskList tasks = new TaskList(List.of(new Todo("keep")));
+        for (String keyword : List.of("", " ", "\t")) {
+            assertEquals("Please provide a keyword to find.",
+                    assertThrows(EkkoException.class, () -> tasks.find(keyword)).getMessage());
+        }
     }
 }
