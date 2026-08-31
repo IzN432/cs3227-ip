@@ -300,20 +300,12 @@ public class Ekko {
      * @param arguments text following the {@code mark} command.
      */
     private void markTask(String arguments) throws IOException, EkkoException {
-        if (arguments.isBlank()) {
-            throw new EkkoException("Please provide a task number.");
+        TaskList.TaskUpdate update = tasks.mark(parseTaskNumber(arguments));
+        if (!update.hasChanged()) {
+            ui.showMessage("This task has already been marked as done:\n  " + update.task());
         } else {
-            try {
-                TaskList.TaskUpdate update = tasks.mark(Integer.parseInt(arguments));
-                if (!update.hasChanged()) {
-                    ui.showMessage("This task has already been marked as done:\n  " + update.task());
-                } else {
-                    saveTasks();
-                    ui.showMessage("Nice! I've marked this task as done:\n  " + update.task());
-                }
-            } catch (NumberFormatException e) {
-                throw new EkkoException("Please provide a valid task number.");
-            }
+            saveTasks();
+            ui.showMessage("Nice! I've marked this task as done:\n  " + update.task());
         }
     }
 
@@ -324,20 +316,12 @@ public class Ekko {
      * @param arguments text following the {@code unmark} command.
      */
     private void unmarkTask(String arguments) throws IOException, EkkoException {
-        if (arguments.isBlank()) {
-            throw new EkkoException("Please provide a task number.");
+        TaskList.TaskUpdate update = tasks.unmark(parseTaskNumber(arguments));
+        if (!update.hasChanged()) {
+            ui.showMessage("This task has already been unmarked:\n  " + update.task());
         } else {
-            try {
-                TaskList.TaskUpdate update = tasks.unmark(Integer.parseInt(arguments));
-                if (!update.hasChanged()) {
-                    ui.showMessage("This task has already been unmarked:\n  " + update.task());
-                } else {
-                    saveTasks();
-                    ui.showMessage("Okay, I've unmarked this task as not done yet:\n  " + update.task());
-                }
-            } catch (NumberFormatException e) {
-                throw new EkkoException("Please provide a valid task number.");
-            }
+            saveTasks();
+            ui.showMessage("Okay, I've unmarked this task as not done yet:\n  " + update.task());
         }
     }
 
@@ -348,20 +332,30 @@ public class Ekko {
      * @param arguments text following the {@code delete} command.
      */
     private void deleteTask(String arguments) throws IOException, EkkoException {
+        Task deletedTask = tasks.delete(parseTaskNumber(arguments));
+        saveTasks();
+        ui.showMessage(String.format(
+                "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
+                deletedTask,
+                tasks.size()
+        ));
+    }
+
+    /**
+     * Parses a task number while leaving list-bound checks to {@link TaskList}.
+     *
+     * @param arguments text following a command that requires a task number.
+     * @return the parsed integer, without converting it to a list index.
+     * @throws EkkoException if the argument is blank or cannot be parsed as an integer.
+     */
+    private int parseTaskNumber(String arguments) throws EkkoException {
         if (arguments.isBlank()) {
             throw new EkkoException("Please provide a task number.");
-        } else {
-            try {
-                Task deletedTask = tasks.delete(Integer.parseInt(arguments));
-                saveTasks();
-                ui.showMessage(String.format(
-                        "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
-                        deletedTask,
-                        tasks.size()
-                ));
-            } catch (NumberFormatException e) {
-                throw new EkkoException("Please provide a valid task number.");
-            }
+        }
+        try {
+            return Integer.parseInt(arguments);
+        } catch (NumberFormatException e) {
+            throw new EkkoException("Please provide a valid task number.");
         }
     }
 

@@ -63,6 +63,38 @@ class GuiCommandTest {
     }
 
     @Test
+    void processCommand_invalidTaskNumbers_preservesTasksAndReportsConsistentErrors() throws IOException {
+        List<String> messages = new ArrayList<>();
+        Path file = directory.resolve("tasks.txt");
+        Ekko ekko = new Ekko(new GuiUi(messages::add, () -> "no"), new Storage(file));
+        ekko.processCommand("todo keep");
+        String savedTasks = Files.readString(file);
+        String[][] invalidArguments = {
+            {"", "Please provide a task number."},
+            {"   ", "Please provide a task number."},
+            {"first", "Please provide a valid task number."},
+            {"1 2", "Please provide a valid task number."},
+            {"2147483648", "Please provide a valid task number."},
+            {"-2147483649", "Please provide a valid task number."},
+            {"0", "Please input a valid task number. You can send list to see how many tasks you have."},
+            {"-1", "Please input a valid task number. You can send list to see how many tasks you have."},
+            {"2", "Please input a valid task number. You can send list to see how many tasks you have."}
+        };
+
+        for (String command : List.of("mark", "unmark", "delete")) {
+            for (String[] invalidArgument : invalidArguments) {
+                String input = command + " " + invalidArgument[0];
+                messages.clear();
+                assertFalse(ekko.processCommand(input), input);
+                assertEquals(List.of(invalidArgument[1]), messages, input);
+                assertEquals(savedTasks, Files.readString(file), input);
+                ekko.processCommand("list");
+                assertEquals("Here are the tasks in your list:\n1.[T][ ] keep", messages.getLast(), input);
+            }
+        }
+    }
+
+    @Test
     void processCommand_recoveryDeclined_preservesFileAndBlocksCommands() throws IOException {
         Path file = directory.resolve("tasks.txt");
         Files.writeString(file, "invalid saved data");
