@@ -45,6 +45,21 @@ public class Main extends Application {
      * Opens the window using supplied storage, allowing isolated GUI tests.
      */
     void start(Stage stage, Storage storage) {
+        VBox root = createContent();
+        stage.setTitle("Ekko");
+        stage.setScene(new Scene(root, 720, 540));
+        stage.setMinWidth(420);
+        stage.setMinHeight(360);
+        stage.setOnHidden(event -> stopSession());
+        stage.show();
+
+        startSession(stage, storage);
+    }
+
+    /**
+     * Assembles the conversation controls in their displayed order.
+     */
+    private VBox createContent() {
         Label greeting = new Label("Hello World! Welcome to Ekko.");
         greeting.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
         Label help = new Label("Try: todo read a book | list | mark 1 | find book | bye\n"
@@ -53,13 +68,31 @@ public class Main extends Application {
                 + "agenda 2026-09-02 | unmark 1 | delete 1");
         help.setWrapText(true);
 
+        createConversation();
+        HBox commandBar = createCommandBar();
+        status = new Label();
+        status.setId("replyStatus");
+        VBox root = new VBox(12, greeting, help, conversation, status, commandBar);
+        root.setPadding(new Insets(16));
+        return root;
+    }
+
+    /**
+     * Creates the read-only conversation area that grows with the window.
+     */
+    private void createConversation() {
         conversation = new TextArea();
         conversation.setId("conversation");
         conversation.setAccessibleText("Conversation with Ekko");
         conversation.setEditable(false);
         conversation.setWrapText(true);
         VBox.setVgrow(conversation, Priority.ALWAYS);
+    }
 
+    /**
+     * Creates the command field and connects both submission controls.
+     */
+    private HBox createCommandBar() {
         input = new TextField();
         input.setId("commandInput");
         input.setPromptText("Type a command and press Enter");
@@ -70,18 +103,13 @@ public class Main extends Application {
         send.setDefaultButton(true);
         send.setOnAction(event -> submitCommand());
         input.setOnAction(event -> submitCommand());
+        return new HBox(8, input, send);
+    }
 
-        status = new Label();
-        status.setId("replyStatus");
-        VBox root = new VBox(12, greeting, help, conversation, status, new HBox(8, input, send));
-        root.setPadding(new Insets(16));
-        stage.setTitle("Ekko");
-        stage.setScene(new Scene(root, 720, 540));
-        stage.setMinWidth(420);
-        stage.setMinHeight(360);
-        stage.setOnHidden(event -> stopSession());
-        stage.show();
-
+    /**
+     * Loads saved tasks after the window is shown, disabling input if startup fails.
+     */
+    private void startSession(Stage stage, Storage storage) {
         GuiUi ui = new GuiUi(message -> appendMessage("Ekko", message), () -> confirmRecovery(stage));
         try {
             ekko = new Ekko(ui, storage);
