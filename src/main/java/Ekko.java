@@ -3,9 +3,7 @@ import java.time.LocalDateTime;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.Set;
 
 /**
@@ -20,12 +18,12 @@ public class Ekko {
         }
     }
 
-    private final Scanner scanner;
-    private final List<Task> tasks;
+    private final Ui ui;
+    private final TaskList tasks;
     private final boolean canStart;
 
     public Ekko() throws IOException {
-        scanner = new Scanner(System.in);
+        ui = new Ui();
         List<Task> loadedTasks;
         boolean startupCanProceed = true;
         try {
@@ -34,7 +32,7 @@ public class Ekko {
             loadedTasks = List.of();
             startupCanProceed = handleInvalidDataFile();
         }
-        tasks = new ArrayList<>(loadedTasks);
+        tasks = new TaskList(loadedTasks);
         canStart = startupCanProceed;
     }
 
@@ -46,14 +44,14 @@ public class Ekko {
      * @return {@code true} if the invalid file was deleted and startup can proceed
      */
     private boolean handleInvalidDataFile() throws IOException {
-        System.out.println("The stored task data is invalid. Delete the data file? (y/n)");
-        String response = scanner.hasNextLine() ? scanner.nextLine().trim() : "";
+        ui.showMessage("The stored task data is invalid. Delete the data file? (y/n)");
+        String response = ui.readOptionalResponse();
         if (response.equalsIgnoreCase("y") || response.equalsIgnoreCase("yes")) {
             Storage.deleteDataFile();
-            System.out.println("The invalid data file was deleted. Ekko will start with an empty task list.");
+            ui.showMessage("The invalid data file was deleted. Ekko will start with an empty task list.");
             return true;
         } else {
-            System.out.println("The data file was kept. Ekko will now exit.");
+            ui.showMessage("The data file was kept. Ekko will now exit.");
             return false;
         }
     }
@@ -62,28 +60,25 @@ public class Ekko {
      * Runs the chatbot until the user enters the {@code bye} command.
      */
     public void mainLoop() throws IOException {
-        printSeparator();
-        printBanner();
-        sendMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", getName()));
-        printSeparator();
+        ui.showWelcome(getName());
 
-        String input = getInput().trim();
-        printSeparator();
+        String input = ui.readCommand();
+        ui.showSeparator();
         boolean shouldExit = false;
         while (!shouldExit) {
             try {
                 shouldExit = handleInput(input);
             } catch (EkkoException e) {
-                sendMessage(e.getMessage());
+                ui.showMessage(e.getMessage());
             }
             if (!shouldExit) {
-                printSeparator();
-                input = getInput().trim();
-                printSeparator();
+                ui.showSeparator();
+                input = ui.readCommand();
+                ui.showSeparator();
             }
         }
-        sendMessage("Bye. Hope to see you again soon!");
-        printSeparator();
+        ui.showMessage("Bye. Hope to see you again soon!");
+        ui.showSeparator();
     }
 
     /**
@@ -92,13 +87,9 @@ public class Ekko {
      * @param input complete line entered by the user
      */
     private boolean handleInput(String input) throws IOException, EkkoException {
-        if (input.isBlank()) {
-            throw new EkkoException("Please enter a command.");
-        }
-
-        String[] parts = input.split("\\s+", 2);
-        Command command = Command.from(parts[0]);
-        String arguments = parts.length == 2 ? parts[1].trim() : "";
+        Parser.ParsedCommand parsedCommand = Parser.parse(input);
+        Command command = parsedCommand.command();
+        String arguments = parsedCommand.arguments();
 
         switch (command) {
         case TODO -> addTodo(arguments);
@@ -175,18 +166,14 @@ public class Ekko {
             throw new EkkoException("Please use a valid date such as 2019-10-15 or 2/12/2019.");
         }
 
-        List<Task> matchingTasks = tasks.stream().filter(task -> task.occursOn(date)).toList();
+        List<Task> matchingTasks = tasks.findOn(date);
         String formattedDate = DateTimeParser.format(date);
         if (matchingTasks.isEmpty()) {
-            sendMessage("No deadlines or events found on " + formattedDate + ".");
+            ui.showMessage("No deadlines or events found on " + formattedDate + ".");
             return;
         }
 
-        System.out.println("Here are the deadlines and events on " + formattedDate + ":");
-        for (int i = 0; i < matchingTasks.size(); i++) {
-            System.out.printf("%d.%s%n", i + 1, matchingTasks.get(i));
-        }
-        System.out.println();
+        ui.showTasks("Here are the deadlines and events on " + formattedDate + ":", matchingTasks);
     }
 
     /**
@@ -209,8 +196,8 @@ public class Ekko {
      */
     private void addTask(Task task) throws IOException {
         tasks.add(task);
-        Storage.saveTasks(tasks);
-        sendMessage(String.format(
+        saveTasks();
+        ui.showMessage(String.format(
                 "Got it. I've added this task:\n  %s\nNow you have %d tasks in the list.",
                 task,
                 tasks.size()
@@ -222,13 +209,9 @@ public class Ekko {
      */
     private void printTasks() {
         if (tasks.isEmpty()) {
-            sendMessage("No tasks found!");
+            ui.showMessage("No tasks found!");
         } else {
-            System.out.println("Here are the tasks in your list:");
-            for (int i = 0; i < tasks.size(); i++) {
-                System.out.printf("%d.%s\n", i + 1, tasks.get(i));
-            }
-            System.out.println();
+            ui.showTasks("Here are the tasks in your list:", tasks.asList());
         }
     }
 
@@ -243,17 +226,12 @@ public class Ekko {
             throw new EkkoException("Please provide a task number.");
         } else {
             try {
-                int taskIndex = Integer.parseInt(arguments) - 1;
-                if (taskIndex < 0 || taskIndex >= tasks.size()) {
-                    throw new EkkoException(
-                            "Please input a valid task number. You can send list to see how many tasks you have."
-                    );
-                } else if (tasks.get(taskIndex).isMarked()) {
-                    sendMessage("This task has already been marked as done:\n  " + tasks.get(taskIndex));
+                TaskList.TaskUpdate update = tasks.mark(Integer.parseInt(arguments));
+                if (!update.changed()) {
+                    ui.showMessage("This task has already been marked as done:\n  " + update.task());
                 } else {
-                    tasks.get(taskIndex).setMarked(true);
-                    Storage.saveTasks(tasks);
-                    sendMessage("Nice! I've marked this task as done:\n  " + tasks.get(taskIndex));
+                    saveTasks();
+                    ui.showMessage("Nice! I've marked this task as done:\n  " + update.task());
                 }
             } catch (NumberFormatException e) {
                 throw new EkkoException("Please provide a valid task number.");
@@ -272,17 +250,12 @@ public class Ekko {
             throw new EkkoException("Please provide a task number.");
         } else {
             try {
-                int taskIndex = Integer.parseInt(arguments) - 1;
-                if (taskIndex < 0 || taskIndex >= tasks.size()) {
-                    throw new EkkoException(
-                            "Please input a valid task number. You can send list to see how many tasks you have."
-                    );
-                } else if (!tasks.get(taskIndex).isMarked()) {
-                    sendMessage("This task has already been unmarked:\n  " + tasks.get(taskIndex));
+                TaskList.TaskUpdate update = tasks.unmark(Integer.parseInt(arguments));
+                if (!update.changed()) {
+                    ui.showMessage("This task has already been unmarked:\n  " + update.task());
                 } else {
-                    tasks.get(taskIndex).setMarked(false);
-                    Storage.saveTasks(tasks);
-                    sendMessage("Okay, I've unmarked this task as not done yet:\n  " + tasks.get(taskIndex));
+                    saveTasks();
+                    ui.showMessage("Okay, I've unmarked this task as not done yet:\n  " + update.task());
                 }
             } catch (NumberFormatException e) {
                 throw new EkkoException("Please provide a valid task number.");
@@ -301,49 +274,21 @@ public class Ekko {
             throw new EkkoException("Please provide a task number.");
         } else {
             try {
-                int taskIndex = Integer.parseInt(arguments) - 1;
-                if (taskIndex < 0 || taskIndex >= tasks.size()) {
-                    throw new EkkoException(
-                            "Please input a valid task number. You can send list to see how many tasks you have."
-                    );
-                } else {
-                    Task deletedTask = tasks.remove(taskIndex);
-                    Storage.saveTasks(tasks);
-                    sendMessage(String.format(
-                            "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
-                            deletedTask,
-                            tasks.size()
-                    ));
-                }
+                Task deletedTask = tasks.delete(Integer.parseInt(arguments));
+                saveTasks();
+                ui.showMessage(String.format(
+                        "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
+                        deletedTask,
+                        tasks.size()
+                ));
             } catch (NumberFormatException e) {
                 throw new EkkoException("Please provide a valid task number.");
             }
         }
     }
 
-    private String getInput() {
-        String input = scanner.nextLine();
-        System.out.println();
-        return input;
-    }
-
-    private void printBanner() {
-        String banner = " _______  __  ___  __  ___   ______   \n"
-                + "|   ____||  |/  / |  |/  /  /  __  \\  \n"
-                + "|  |__   |  '  /  |  '  /  |  |  |  | \n"
-                + "|   __|  |    <   |    <   |  |  |  | \n"
-                + "|  |____ |  .  \\  |  .  \\  |  `--'  | \n"
-                + "|_______||__|\\__\\ |__|\\__\\  \\______/  \n";
-        System.out.println(banner);
-    }
-
-    private void sendMessage(String message) {
-        System.out.println(message);
-        System.out.println();
-    }
-
-    private void printSeparator() {
-        System.out.println("─".repeat(80));
+    private void saveTasks() throws IOException {
+        Storage.saveTasks(tasks.asList());
     }
 
     private String getName() {
