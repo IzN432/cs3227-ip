@@ -38,7 +38,7 @@ class ParserTest {
     }
 
     @Test
-    void parse_unknownOrUppercaseCommand_reportsUnknownCommand() {
+    void parse_unknownOrUppercaseCommand_translatesLookupFailureToEkkoException() {
         for (String input : new String[] {"remember task", "TODO task", "todotask"}) {
             assertEquals("Unknown command. A command reference has been provided. Use it.",
                     assertThrows(EkkoException.class, () -> Parser.parse(input)).getMessage());

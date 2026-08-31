@@ -2,8 +2,6 @@ package ekko.parser;
 
 import java.util.Locale;
 
-import ekko.EkkoException;
-
 /**
  * Defines supported commands and interface-independent reference text.
  */
@@ -50,14 +48,14 @@ public enum Command {
      *
      * @param commandWord command word entered by the user.
      * @return the matching command.
-     * @throws EkkoException if the command word is not supported.
+     * @throws IllegalArgumentException if the command word is null or not supported.
      */
-    public static Command from(String commandWord) throws EkkoException {
+    public static Command from(String commandWord) {
         for (Command command : values()) {
             if (command.getWord().equals(commandWord)) {
                 return command;
             }
         }
-        throw new EkkoException("Unknown command. A command reference has been provided. Use it.");
+        throw new IllegalArgumentException("Unknown command: " + commandWord);
     }
 }

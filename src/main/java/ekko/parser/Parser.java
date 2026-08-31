@@ -23,7 +23,12 @@ public final class Parser {
         }
 
         String[] parts = input.split("\\s+", 2);
-        Command command = Command.from(parts[0]);
+        Command command;
+        try {
+            command = Command.from(parts[0]);
+        } catch (IllegalArgumentException e) {
+            throw new EkkoException("Unknown command. A command reference has been provided. Use it.");
+        }
         String arguments = parts.length == 2 ? parts[1].trim() : "";
         return new ParsedCommand(command, arguments);
     }
