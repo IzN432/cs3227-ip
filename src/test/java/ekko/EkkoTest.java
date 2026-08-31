@@ -206,7 +206,7 @@ class EkkoTest {
                 .toAbsolutePath().toString();
         Path output = working.resolve("stdout.txt");
         Path error = working.resolve("stderr.txt");
-        Process process = new ProcessBuilder(java.toString(), "-cp", classPath, "ekko.Ekko")
+        Process process = new ProcessBuilder(java.toString(), "-ea", "-cp", classPath, "ekko.Ekko")
                 .directory(working.toFile())
                 .redirectOutput(output.toFile())
                 .redirectError(error.toFile())

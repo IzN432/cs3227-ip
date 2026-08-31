@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -104,6 +105,8 @@ public class Main extends Application {
         if (input.isDisabled()) {
             return;
         }
+        // Enabled input means the previous reply has finished or was never scheduled.
+        assert pendingReply == null : "An enabled command field must not have a pending reply";
         String command = input.getText();
         input.clear();
         appendMessage("You", command);
@@ -123,6 +126,10 @@ public class Main extends Application {
      * Displays the delayed reply and restores input unless the session has ended.
      */
     private void executeCommand(String command) {
+        // Only a successfully initialized session may schedule a command callback.
+        assert ekko != null && ekko.canStart() : "Delayed commands require a ready chatbot";
+        // The submission lock must remain held throughout the delay and command execution.
+        assert input.isDisabled() && send.isDisabled() : "Input must stay disabled until the reply completes";
         try {
             if (ekko.processCommand(command)) {
                 stopSession();
@@ -140,6 +147,8 @@ public class Main extends Application {
     }
 
     private void appendMessage(String speaker, String message) {
+        // Startup, event handlers, and delayed callbacks must all update controls on the FX thread.
+        assert Platform.isFxApplicationThread() : "Conversation updates must run on the JavaFX thread";
         conversation.appendText(speaker + ":\n" + message + "\n\n");
         conversation.positionCaret(conversation.getLength());
     }

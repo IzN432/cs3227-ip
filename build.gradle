@@ -46,6 +46,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    enableAssertions = true
     jvmArgs '--enable-native-access=ALL-UNNAMED'
 
     testLogging {

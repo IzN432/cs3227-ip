@@ -51,9 +51,14 @@ public final class ArgumentParser {
 
         while (matcher.find()) {
             ArgumentName argument = ArgumentName.fromText(matcher.group(1));
+            // The regex is built only from this command's allowed names.
+            assert availableArguments.contains(argument) : "Matched argument must be allowed by the command";
             if (previousName == null) {
                 description = argumentString.substring(0, matcher.start()).trim();
             } else {
+                // A previous match must establish a valid, non-overlapping value boundary.
+                assert previousValueStartIndex >= 0 && previousValueStartIndex <= matcher.start()
+                        : "Previous value must start before the next argument";
                 String previousValue = argumentString.substring(
                         previousValueStartIndex,
                         matcher.start()
@@ -66,6 +71,9 @@ public final class ArgumentParser {
         parsedArguments.setDescription(description);
 
         if (previousName != null) {
+            // A final argument may have an empty value, so the end-of-input index is valid.
+            assert previousValueStartIndex >= 0 && previousValueStartIndex <= argumentString.length()
+                    : "Final value must start within the input or at its end";
             String previousValue = argumentString.substring(
                     previousValueStartIndex
             ).trim();
