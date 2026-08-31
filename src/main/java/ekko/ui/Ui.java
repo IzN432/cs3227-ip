@@ -2,6 +2,8 @@ package ekko.ui;
 
 import ekko.task.Task;
 
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.Scanner;
 
@@ -10,12 +12,24 @@ import java.util.Scanner;
  */
 public class Ui {
     private final Scanner scanner;
+    private final PrintStream output;
 
     /**
      * Creates a UI connected to the standard input stream.
      */
     public Ui() {
-        scanner = new Scanner(System.in);
+        this(System.in, System.out);
+    }
+
+    /**
+     * Creates a UI with caller-owned streams, allowing in-memory streams in tests.
+     *
+     * @param input stream containing user commands
+     * @param output destination for displayed messages
+     */
+    public Ui(InputStream input, PrintStream output) {
+        scanner = new Scanner(input);
+        this.output = output;
     }
 
     /**
@@ -25,7 +39,7 @@ public class Ui {
      */
     public String readCommand() {
         String input = scanner.nextLine();
-        System.out.println();
+        output.println();
         return input.trim();
     }
 
@@ -51,7 +65,7 @@ public class Ui {
                 + "|   __|  |    <   |    <   |  |  |  | \n"
                 + "|  |____ |  .  \\  |  .  \\  |  `--'  | \n"
                 + "|_______||__|\\__\\ |__|\\__\\  \\______/  \n";
-        System.out.println(banner);
+        output.println(banner);
         showMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", name));
         showSeparator();
     }
@@ -62,8 +76,8 @@ public class Ui {
      * @param message message to display
      */
     public void showMessage(String message) {
-        System.out.println(message);
-        System.out.println();
+        output.println(message);
+        output.println();
     }
 
     /**
@@ -73,17 +87,17 @@ public class Ui {
      * @param tasks tasks to display
      */
     public void showTasks(String heading, List<Task> tasks) {
-        System.out.println(heading);
+        output.println(heading);
         for (int i = 0; i < tasks.size(); i++) {
-            System.out.printf("%d.%s%n", i + 1, tasks.get(i));
+            output.printf("%d.%s%n", i + 1, tasks.get(i));
         }
-        System.out.println();
+        output.println();
     }
 
     /**
      * Displays the separator between command interactions.
      */
     public void showSeparator() {
-        System.out.println("-".repeat(80));
+        output.println("-".repeat(80));
     }
 }

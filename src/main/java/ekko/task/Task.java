@@ -11,7 +11,15 @@ public abstract class Task {
     private boolean marked;
     private final String description;
 
+    /**
+     * Creates a task whose description cannot conflict with the storage delimiter.
+     *
+     * @throws IllegalArgumentException if the description contains {@code |}
+     */
     protected Task(String description) {
+        if (description.contains("|")) {
+            throw new IllegalArgumentException("Task descriptions cannot contain '|'.");
+        }
         this.description = description;
         marked = false;
     }

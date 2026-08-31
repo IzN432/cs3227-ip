@@ -35,15 +35,29 @@ public class Ekko {
     }
 
     private final Ui ui;
+    private final Storage storage;
     private final TaskList tasks;
     private final boolean canStart;
 
+    /** Creates the application with console UI and default file storage. */
     public Ekko() throws IOException {
-        ui = new Ui();
+        this(new Ui(), new Storage());
+    }
+
+    /**
+     * Loads the application using supplied UI and storage dependencies.
+     *
+     * @param ui user interaction endpoint
+     * @param storage task persistence endpoint
+     * @throws IOException if loading or recovery fails
+     */
+    public Ekko(Ui ui, Storage storage) throws IOException {
+        this.ui = ui;
+        this.storage = storage;
         List<Task> loadedTasks;
         boolean startupCanProceed = true;
         try {
-            loadedTasks = Storage.loadTasks();
+            loadedTasks = storage.loadTasks();
         } catch (IllegalArgumentException | DateTimeException e) {
             loadedTasks = List.of();
             startupCanProceed = handleInvalidDataFile();
@@ -63,7 +77,7 @@ public class Ekko {
         ui.showMessage("The stored task data is invalid. Delete the data file? (y/n)");
         String response = ui.readOptionalResponse();
         if (response.equalsIgnoreCase("y") || response.equalsIgnoreCase("yes")) {
-            Storage.deleteDataFile();
+            storage.deleteDataFile();
             ui.showMessage("The invalid data file was deleted. Ekko will start with an empty task list.");
             return true;
         } else {
@@ -84,7 +98,7 @@ public class Ekko {
         while (!shouldExit) {
             try {
                 shouldExit = handleInput(input);
-            } catch (EkkoException e) {
+            } catch (EkkoException | IllegalArgumentException e) {
                 ui.showMessage(e.getMessage());
             }
             if (!shouldExit) {
@@ -304,7 +318,7 @@ public class Ekko {
     }
 
     private void saveTasks() throws IOException {
-        Storage.saveTasks(tasks.asList());
+        storage.saveTasks(tasks.asList());
     }
 
     private String getName() {

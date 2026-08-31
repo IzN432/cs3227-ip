@@ -1,0 +1,46 @@
+package ekko.parser;
+
+import ekko.EkkoException;
+import java.util.Locale;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/** Tests complete-command splitting, preserving argument content and errors. */
+class ParserTest {
+    @Test
+    void parse_eachBareCommand_returnsEmptyArguments() throws EkkoException {
+        for (Command command : Command.values()) {
+            Parser.ParsedCommand parsed = Parser.parse(command.name().toLowerCase(Locale.ROOT));
+            assertEquals(command, parsed.command());
+            assertEquals("", parsed.arguments());
+        }
+    }
+
+    @Test
+    void parse_whitespaceSeparator_trimsEdgesButPreservesInternalText() throws EkkoException {
+        Parser.ParsedCommand parsed = Parser.parse("event \t meeting  notes /from 1800 /to 1900  ");
+        assertEquals(Command.EVENT, parsed.command());
+        assertEquals("meeting  notes /from 1800 /to 1900", parsed.arguments());
+    }
+
+    @Test
+    void parse_blankInput_reportsMissingCommand() {
+        for (String input : new String[] {"", " ", "\t\n"}) {
+            assertEquals("Please enter a command.",
+                    assertThrows(EkkoException.class, () -> Parser.parse(input)).getMessage());
+        }
+    }
+
+    @Test
+    void parse_unknownOrUppercaseCommand_reportsUnknownCommand() {
+        for (String input : new String[] {"remember task", "TODO task", "todotask"}) {
+            assertEquals("I don't recognise that command.",
+                    assertThrows(EkkoException.class, () -> Parser.parse(input)).getMessage());
+        }
+    }
+
+    @Test
+    void parse_trailingWhitespace_returnsEmptyArguments() throws EkkoException {
+        assertEquals("", Parser.parse("bye \t ").arguments());
+    }
+}

@@ -12,9 +12,20 @@ import java.util.List;
  * Saves the current task list to the application's data file.
  */
 public final class Storage {
-    private static final Path DATA_FILE = Path.of("data", "ekko.txt");
+    private final Path dataFile;
 
-    private Storage() {
+    /** Creates storage at the application's default data-file location. */
+    public Storage() {
+        this(Path.of("data", "ekko.txt"));
+    }
+
+    /**
+     * Creates storage at a supplied location, allowing isolated temporary files in tests.
+     *
+     * @param dataFile file used for both loading and saving
+     */
+    public Storage(Path dataFile) {
+        this.dataFile = dataFile.toAbsolutePath();
     }
 
     /**
@@ -25,13 +36,13 @@ public final class Storage {
      * @throws IOException if the data file cannot be read
      * @throws IllegalArgumentException if the file contains invalid task data
      */
-    public static List<Task> loadTasks() throws IOException {
-        if (Files.notExists(DATA_FILE)) {
+    public List<Task> loadTasks() throws IOException {
+        if (Files.notExists(dataFile)) {
             return new ArrayList<>();
         }
 
         List<Task> tasks = new ArrayList<>();
-        for (String line : Files.readAllLines(DATA_FILE)) {
+        for (String line : Files.readAllLines(dataFile)) {
             tasks.add(Task.fromSerializedString(line));
         }
         return tasks;
@@ -43,9 +54,9 @@ public final class Storage {
      * @param tasks current tasks to save
      * @throws IOException if the data directory or file cannot be written
      */
-    public static void saveTasks(List<Task> tasks) throws IOException {
-        Files.createDirectories(DATA_FILE.getParent());
-        Files.write(DATA_FILE, tasks.stream().map(Task::toSerializedString).toList());
+    public void saveTasks(List<Task> tasks) throws IOException {
+        Files.createDirectories(dataFile.getParent());
+        Files.write(dataFile, tasks.stream().map(Task::toSerializedString).toList());
     }
 
     /**
@@ -54,7 +65,7 @@ public final class Storage {
      * @return {@code true} if a file was deleted
      * @throws IOException if the file cannot be deleted
      */
-    public static boolean deleteDataFile() throws IOException {
-        return Files.deleteIfExists(DATA_FILE);
+    public boolean deleteDataFile() throws IOException {
+        return Files.deleteIfExists(dataFile);
     }
 }
