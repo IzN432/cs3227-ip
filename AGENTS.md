@@ -24,6 +24,14 @@ Unless the user says otherwise, assume that you are assisting a student working 
 
 # Project-specific requirements
 
+## Coding standard
+
+All Java code in this project, including production code, tests, and test fixtures, must follow the
+`seedu-java-coding-standard` skill at `.codex/skills/seedu-java-coding-standard/SKILL.md`.
+Read and apply that skill before writing, modifying, or reviewing Java code. It adopts the SE-EDU
+basic and intermediate Java standard and defines this project's import ordering. Keep existing
+behavior unchanged during style-only updates, and retain the documentation and testing requirements below.
+
 ## Java version:
 
 Ensure that Java 25 is used when running the application or build tasks. On macOS, use `sdk use java 25.0.3.fx-zulu` to switch to Java 25 if needed.
@@ -41,7 +49,10 @@ JUnit is the authoritative automated regression suite. Keep its test cases and f
 
 ## Git
 
-Follow the commit message and branch naming conventions at https://se-education.org/guides/conventions/git.html.
+All future commits and branch names must follow the `seedu-git-standard` skill at
+`.codex/skills/seedu-git-standard/SKILL.md`, based on https://se-education.org/guides/conventions/git.html.
+Read and apply this skill before proposing, creating, amending, or reviewing commit messages
+and before naming branches.
 Use lightweight tags unless the user requests an annotated tag.
 When proposing or creating a commit message, include enough detail to explain the rationale for the change.
 Do not commit or push unless explicitly asked.
