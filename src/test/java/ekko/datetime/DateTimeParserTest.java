@@ -160,6 +160,26 @@ class DateTimeParserTest {
     }
 
     @Test
+    void parse_dateOnlyLeapDay_defaultsToMidnight() {
+        LocalDateTime expected = LocalDateTime.of(2000, 2, 29, 0, 0);
+        assertAll(
+                () -> assertEquals(expected, DateTimeParser.parse("2000-02-29")),
+                () -> assertEquals(expected, DateTimeParser.parse("29/2/2000"))
+        );
+    }
+
+    @Test
+    void parse_invalidDateOnly_preservesDateTimeDiagnostic() {
+        for (String input : new String[] {"1900-02-29", "29/2/1900", "", "tomorrow"}) {
+            DateTimeParseException exception = assertThrows(DateTimeParseException.class,
+                    () -> DateTimeParser.parse(input), input);
+            assertEquals("Unsupported date/time", exception.getMessage(), input);
+            assertEquals(input, exception.getParsedString(), input);
+            assertEquals(0, exception.getErrorIndex(), input);
+        }
+    }
+
+    @Test
     void parse_timeBoundaries_returnsDateTime() {
         assertAll(
                 () -> assertEquals(LocalDateTime.of(2026, 1, 1, 0, 0),

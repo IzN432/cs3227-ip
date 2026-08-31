@@ -46,14 +46,12 @@ public final class DateTimeParser {
                 // Try the next supported format.
             }
         }
-        for (DateTimeFormatter formatter : INPUT_DATE_FORMATS) {
-            try {
-                return java.time.LocalDate.parse(value, formatter).atStartOfDay();
-            } catch (DateTimeParseException ignored) {
-                // Try the next supported format.
-            }
+        try {
+            return parseDate(value).atStartOfDay();
+        } catch (DateTimeParseException ignored) {
+            // Preserve the date/time diagnostic when neither kind of input is valid.
+            throw new DateTimeParseException("Unsupported date/time", value, 0);
         }
-        throw new DateTimeParseException("Unsupported date/time", value, 0);
     }
 
     /**
