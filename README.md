@@ -2,6 +2,10 @@
 
 Ekko is a chatbot built as part of the CS3227 project. Given below are instructions on how to set it up.
 
+Ekko is a deadpan robot administrator offering "Human task supervision."
+Expect dry remarks about human memory, an amber-on-charcoal interface, and clear
+task details. Validation and file-access errors stay direct so you can act on them.
+
 ## Setting up in Intellij
 
 Prerequisites: JDK 25, update Intellij to the most recent version.
@@ -38,7 +42,7 @@ warning can still appear because this project uses classpath packaging. The tuto
 allows ignoring it; removing its cause requires loading JavaFX on the module path instead.
 
 Type a command into the bottom field, then press **Enter** or click **Send**. Your command
-appears immediately, followed by a 750 ms pause showing **Ekko is thinking...** before the reply.
+appears immediately, followed by a 750 ms pause showing **PROCESSING COMMAND...** before the reply.
 Input is disabled during the pause to prevent duplicate submissions. Closing the window during
 the pause cancels the pending command. The scrollable conversation shows your commands and
 Ekko's replies. Examples:

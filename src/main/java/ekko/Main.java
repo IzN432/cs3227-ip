@@ -42,6 +42,7 @@ public class Main extends Application {
     private Button send;
     private Ekko ekko;
     private Label status;
+    private Label identity;
     /** Schedules a reply without blocking the JavaFX application thread. */
     private PauseTransition pendingReply;
 
@@ -70,11 +71,12 @@ public class Main extends Application {
      * Assembles the conversation controls in their displayed order.
      */
     private VBox createContent() {
-        Label greeting = new Label("ekko");
-        greeting.getStyleClass().add("app-title");
-        Label subtitle = new Label("Your personal task assistant");
+        identity = new Label("EKKO ONLINE");
+        identity.setId("identityStatus");
+        identity.getStyleClass().add("app-title");
+        Label subtitle = new Label("Human task supervision.");
         subtitle.getStyleClass().add("muted");
-        VBox heading = new VBox(2, greeting, subtitle);
+        VBox heading = new VBox(4, identity, subtitle);
         ScrollPane suggestions = createCommandSuggestions();
         TitledPane commandHelp = new TitledPane("Command reference", suggestions);
         commandHelp.setId("commandHelp");
@@ -222,7 +224,7 @@ public class Main extends Application {
         appendMessage("You", command);
         input.setDisable(true);
         send.setDisable(true);
-        status.setText("Ekko is thinking...");
+        status.setText("PROCESSING COMMAND...");
         pendingReply = new PauseTransition(RESPONSE_DELAY);
         pendingReply.setOnFinished(event -> {
             pendingReply = null;
@@ -299,6 +301,7 @@ public class Main extends Application {
         status.setText("");
         input.setDisable(true);
         send.setDisable(true);
+        identity.setText("EKKO OFFLINE");
         input.setPromptText("Session ended. Close this window to exit.");
     }
 

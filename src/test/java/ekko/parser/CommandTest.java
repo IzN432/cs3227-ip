@@ -23,7 +23,7 @@ class CommandTest {
     @Test
     void from_unknownOrNonExactWord_throwsHelpfulException() {
         for (String input : new String[] {"", " ", "TODO", "Todo", "todo ", "todo task", "remember"}) {
-            assertEquals("I don't recognise that command.",
+            assertEquals("Unknown command. A command reference has been provided. Use it.",
                     assertThrows(EkkoException.class, () -> Command.from(input)).getMessage());
         }
     }

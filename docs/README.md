@@ -31,7 +31,8 @@ Matches include completed and incomplete tasks and appear in their original orde
 numbered from 1 within the search results. Searching does not change the task list.
 Use `list` to check a task's full-list number before using `mark`, `unmark`, or `delete`.
 
-If nothing matches, Ekko displays `No matching tasks found!`.
+If nothing matches, Ekko displays
+`No matching tasks. Check your spelling before questioning my competence.`
 Entering `find` without a keyword displays `Please provide a keyword to find.`.
 
 

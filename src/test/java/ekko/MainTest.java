@@ -88,14 +88,16 @@ class MainTest {
         long submittedAt = onFxThread(() -> {
             assertTrue(stage.isShowing());
             assertTrue(stage.isResizable());
-            assertTrue(conversationText().contains("Hello! I'm Ekko."));
+            Label identity = (Label) stage.getScene().lookup("#identityStatus");
+            assertEquals("EKKO ONLINE", identity.getText());
+            assertTrue(conversationText().contains("Ekko online."));
             input.setText("todo GUI task");
             long startedAt = System.nanoTime();
             send.fire();
             assertEquals("", input.getText());
             assertTrue(conversationText().contains("You:\n" + "todo GUI task"));
-            assertFalse(conversationText().contains("I've added this task"));
-            assertEquals("Ekko is thinking...", status.getText());
+            assertFalse(conversationText().contains("Added to your agenda"));
+            assertEquals("PROCESSING COMMAND...", status.getText());
             assertTrue(input.isDisabled());
             assertTrue(send.isDisabled());
             assertFalse(Files.exists(file));
@@ -107,9 +109,9 @@ class MainTest {
         awaitReply();
         assertTrue(System.nanoTime() - submittedAt >= TimeUnit.MILLISECONDS.toNanos(700));
         onFxThread(() -> {
-            assertTrue(conversationText().contains("I've added this task"));
+            assertTrue(conversationText().contains("Added to your agenda"));
             assertEquals("T | 0 | GUI task", Files.readString(file).strip());
-            assertEquals(1, conversationText().split("I've added this task", -1).length - 1);
+            assertEquals(1, conversationText().split("Added to your agenda", -1).length - 1);
             assertFalse(input.isDisabled());
             assertFalse(send.isDisabled());
             return null;
@@ -129,7 +131,9 @@ class MainTest {
         });
         submitAndWait("bye", false);
         onFxThread(() -> {
-            assertTrue(conversationText().contains("Bye. Hope to see you again soon!"));
+            assertTrue(conversationText().contains("Ekko offline. You are briefly responsible for yourself."));
+            Label identity = (Label) stage.getScene().lookup("#identityStatus");
+            assertEquals("EKKO OFFLINE", identity.getText());
             assertTrue(input.isDisabled());
             assertTrue(send.isDisabled());
             assertTrue(stage.isShowing());
@@ -181,7 +185,7 @@ class MainTest {
         delayElapsed.get(5, TimeUnit.SECONDS);
         onFxThread(() -> {
             assertFalse(Files.exists(file));
-            assertFalse(conversationText().contains("I've added this task"));
+            assertFalse(conversationText().contains("Added to your agenda"));
             assertEquals("", status.getText());
             return null;
         });

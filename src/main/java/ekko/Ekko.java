@@ -94,7 +94,7 @@ public class Ekko {
         try {
             boolean shouldExit = handleInput(input.trim());
             if (shouldExit) {
-                ui.showMessage("Bye. Hope to see you again soon!");
+                ui.showMessage("Ekko offline. You are briefly responsible for yourself.");
             }
             return shouldExit;
         } catch (EkkoException | IllegalArgumentException e) {
@@ -142,7 +142,7 @@ public class Ekko {
                 ui.showSeparator();
             }
         } while (!shouldExit);
-        ui.showMessage("Bye. Hope to see you again soon!");
+        ui.showMessage("Ekko offline. You are briefly responsible for yourself.");
         ui.showSeparator();
     }
 
@@ -248,11 +248,11 @@ public class Ekko {
         List<Task> matchingTasks = tasks.findOn(date);
         String formattedDate = DateTimeParser.format(date);
         if (matchingTasks.isEmpty()) {
-            ui.showMessage("No deadlines or events found on " + formattedDate + ".");
+            ui.showMessage("Nothing scheduled for " + formattedDate + ". Try not to make a habit of it.");
             return;
         }
 
-        ui.showTasks("Here are the deadlines and events on " + formattedDate + ":", matchingTasks);
+        ui.showTasks("Your scheduled obligations on " + formattedDate + ":", matchingTasks);
     }
 
     /**
@@ -277,7 +277,8 @@ public class Ekko {
         tasks.add(task);
         saveTasks();
         ui.showMessage(String.format(
-                "Got it. I've added this task:\n  %s\nNow you have %d tasks in the list.",
+                "Added to your agenda. Your memory has been relieved of duty:\n"
+                        + "  %s\nNow you have %d tasks in the list.",
                 task,
                 tasks.size()
         ));
@@ -288,9 +289,9 @@ public class Ekko {
      */
     private void printTasks() {
         if (tasks.isEmpty()) {
-            ui.showMessage("No tasks found!");
+            ui.showMessage("Nothing on your agenda. I will assume this is an achievement.");
         } else {
-            ui.showTasks("Here are the tasks in your list:", tasks.asList());
+            ui.showTasks("Human memory is unreliable. Fortunately, I kept a list:", tasks.asList());
         }
     }
 
@@ -306,7 +307,7 @@ public class Ekko {
             ui.showMessage("This task has already been marked as done:\n  " + update.task());
         } else {
             saveTasks();
-            ui.showMessage("Nice! I've marked this task as done:\n  " + update.task());
+            ui.showMessage("One puny task completed. Only your whole life left to go.\n  " + update.task());
         }
     }
 
@@ -322,7 +323,7 @@ public class Ekko {
             ui.showMessage("This task has already been unmarked:\n  " + update.task());
         } else {
             saveTasks();
-            ui.showMessage("Okay, I've unmarked this task as not done yet:\n  " + update.task());
+            ui.showMessage("Premature optimism detected. Back on the agenda:\n  " + update.task());
         }
     }
 
@@ -336,7 +337,8 @@ public class Ekko {
         Task deletedTask = tasks.delete(parseTaskNumber(arguments));
         saveTasks();
         ui.showMessage(String.format(
-                "Noted. I've removed this task:\n  %s\nNow you have %d tasks in the list.",
+                "Removed from your agenda. Your responsibilities may disagree:\n"
+                        + "  %s\nNow you have %d tasks in the list.",
                 deletedTask,
                 tasks.size()
         ));
@@ -366,9 +368,9 @@ public class Ekko {
     private void printMatchingTasks(String arguments) throws EkkoException {
         List<Task> matchingTasks = tasks.find(arguments);
         if (matchingTasks.isEmpty()) {
-            ui.showMessage("No matching tasks found!");
+            ui.showMessage("No matching tasks. Check your spelling before questioning my competence.");
         } else {
-            ui.showTasks("Here are the matching tasks in your list:", matchingTasks);
+            ui.showTasks("Search complete. These tasks match your request:", matchingTasks);
         }
     }
 

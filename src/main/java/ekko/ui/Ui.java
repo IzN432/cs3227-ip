@@ -66,7 +66,7 @@ public class Ui {
                 + "|  |____ |  .  \\  |  .  \\  |  `--'  | \n"
                 + "|_______||__|\\__\\ |__|\\__\\  \\______/  \n";
         output.println(banner);
-        showMessage(String.format("Hello! I'm %s.\nWhat can I do for you?", name));
+        showMessage(String.format("%s online. What's on your agenda?", name));
         showSeparator();
     }
 

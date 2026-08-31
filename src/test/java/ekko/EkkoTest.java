@@ -75,11 +75,11 @@ class EkkoTest {
                 "\nunknown\nevent meeting /from bad /to 2026-09-01\n"
                         + "deadline book /by bad\nmark 2147483648\nbye\n");
         assertTrue(output.contains("Please enter a command."));
-        assertTrue(output.contains("I don't recognise that command."));
+        assertTrue(output.contains("Unknown command. A command reference has been provided. Use it."));
         assertEquals(2, output.lines().filter(line -> line.equals(
                 "Please use a valid date/time such as 2019-10-15 or 2/12/2019 1800.")).count());
         assertTrue(output.contains("Please provide a valid task number."));
-        assertTrue(output.contains("Bye. Hope to see you again soon!"));
+        assertTrue(output.contains("Ekko offline. You are briefly responsible for yourself."));
         assertFalse(Files.exists(file));
     }
 
@@ -92,8 +92,8 @@ class EkkoTest {
                 "event read a | b /from 2026-09-01 /to 2026-09-02")) {
             String output = runLoop(storage, command + "\nlist\nbye\n");
             assertEquals("Task descriptions cannot contain '|'.\n"
-                    + "Here are the tasks in your list:\n1.[T][ ] keep\n"
-                    + "Bye. Hope to see you again soon!", normalize(output), command);
+                    + "Human memory is unreliable. Fortunately, I kept a list:\n1.[T][ ] keep\n"
+                    + "Ekko offline. You are briefly responsible for yourself.", normalize(output), command);
             assertEquals(List.of("T | 0 | keep"),
                     Files.readAllLines(directory.resolve("tasks.txt")), command);
         }
@@ -105,13 +105,13 @@ class EkkoTest {
         String output = runLoop(new Storage(file), "list\nunknown\nbye\ntodo ignored\n")
                 .replace("\r\n", "\n");
         String separator = "-".repeat(80) + "\n";
-        String expectedTranscript = "What can I do for you?\n\n"
+        String expectedTranscript = "What's on your agenda?\n\n"
                 + separator + "\n" + separator
-                + "No tasks found!\n\n"
+                + "Nothing on your agenda. I will assume this is an achievement.\n\n"
                 + separator + "\n" + separator
-                + "I don't recognise that command.\n\n"
+                + "Unknown command. A command reference has been provided. Use it.\n\n"
                 + separator + "\n" + separator
-                + "Bye. Hope to see you again soon!\n\n" + separator;
+                + "Ekko offline. You are briefly responsible for yourself.\n\n" + separator;
 
         assertTrue(output.endsWith(expectedTranscript), output);
         assertFalse(Files.exists(file));
@@ -133,10 +133,10 @@ class EkkoTest {
 
         String output = runLoop(new Storage(file), "find book\nfind   read book  \nbye\n");
 
-        assertEquals("Here are the matching tasks in your list:\n"
+        assertEquals("Search complete. These tasks match your request:\n"
                 + "1.[T][X] read book\n2.[D][ ] return book (by: Sep 01 2026)\n"
-                + "Here are the matching tasks in your list:\n1.[T][X] read book\n"
-                + "Bye. Hope to see you again soon!", normalize(output));
+                + "Search complete. These tasks match your request:\n1.[T][X] read book\n"
+                + "Ekko offline. You are briefly responsible for yourself.", normalize(output));
         assertEquals(savedTasks, Files.readString(file));
     }
 
@@ -144,8 +144,10 @@ class EkkoTest {
     void mainLoop_findEmptyOrBlank_reportsOutcomeAndContinuesWithoutSaving() throws IOException {
         Path file = directory.resolve("tasks.txt");
         String output = runLoop(new Storage(file), "find book\nfind\nfind \t \nbye\n");
-        assertEquals("No matching tasks found!\nPlease provide a keyword to find.\n"
-                + "Please provide a keyword to find.\nBye. Hope to see you again soon!", normalize(output));
+        assertEquals("No matching tasks. Check your spelling before questioning my competence.\n"
+                + "Please provide a keyword to find.\n"
+                + "Please provide a keyword to find.\nEkko offline. You are briefly responsible for yourself.",
+                normalize(output));
         assertFalse(Files.exists(file));
     }
 
@@ -166,8 +168,9 @@ class EkkoTest {
 
         for (String[] invalidCommand : invalidCommands) {
             String output = runLoop(new Storage(file), invalidCommand[0] + "\nlist\nbye\n");
-            assertEquals(invalidCommand[1] + "\nHere are the tasks in your list:\n1.[T][ ] keep\n"
-                    + "Bye. Hope to see you again soon!", normalize(output), invalidCommand[0]);
+            assertEquals(invalidCommand[1] + "\nHuman memory is unreliable. Fortunately, I kept a list:\n"
+                    + "1.[T][ ] keep\n"
+                    + "Ekko offline. You are briefly responsible for yourself.", normalize(output), invalidCommand[0]);
             assertEquals(savedTasks, Files.readString(file), invalidCommand[0]);
         }
     }
@@ -177,7 +180,7 @@ class EkkoTest {
         Storage storage = new Storage(directory.resolve("tasks.txt"));
         String output = runLoop(storage,
                 "event meeting /from 2026-09-01 1800 /to 2026-09-01 1800\nbye\n");
-        assertTrue(output.contains("Got it. I've added this task:"));
+        assertTrue(output.contains("Added to your agenda. Your memory has been relieved of duty:"));
         assertEquals("E | 0 | meeting | 2026-09-01T18:00 | 2026-09-01T18:00",
                 storage.loadTasks().getFirst().toSerializedString());
     }
@@ -196,7 +199,7 @@ class EkkoTest {
         // Startup sees a missing file; subsequently block creation of its parent.
         Files.writeString(file.getParent(), "blocked");
         assertThrows(IOException.class, app::mainLoop);
-        assertFalse(output.toString(StandardCharsets.UTF_8).contains("Got it."));
+        assertFalse(output.toString(StandardCharsets.UTF_8).contains("Added to your agenda"));
     }
 
     @Test
@@ -212,12 +215,12 @@ class EkkoTest {
             String output = runMain(working, input);
             if (isAffirmative) {
                 assertFalse(Files.exists(file));
-                assertTrue(output.contains("What can I do for you?"));
-                assertTrue(output.contains("Bye. Hope to see you again soon!"));
+                assertTrue(output.contains("What's on your agenda?"));
+                assertTrue(output.contains("Ekko offline. You are briefly responsible for yourself."));
             } else {
                 assertEquals("invalid", Files.readString(file));
                 assertTrue(output.contains("The data file was kept."));
-                assertFalse(output.contains("What can I do for you?"));
+                assertFalse(output.contains("What's on your agenda?"));
             }
         }
     }
@@ -272,11 +275,11 @@ class EkkoTest {
      */
     private String normalize(String output) {
         String text = output.replace("\r\n", "\n");
-        int greeting = text.indexOf("What can I do for you?");
+        int greeting = text.indexOf("What's on your agenda?");
         if (greeting >= 0) {
             int banner = text.indexOf("-".repeat(80));
             assertTrue(banner >= 0 && banner < greeting, "Missing startup separator");
-            text = text.substring(0, banner) + text.substring(greeting + "What can I do for you?".length());
+            text = text.substring(0, banner) + text.substring(greeting + "What's on your agenda?".length());
         }
         return text.lines().map(String::stripTrailing)
                 .filter(line -> !line.isEmpty() && !line.equals("-".repeat(80)))

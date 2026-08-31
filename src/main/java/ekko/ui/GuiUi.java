@@ -53,7 +53,7 @@ public class GuiUi extends Ui {
 
     @Override
     public void showWelcome(String name) {
-        showMessage("Hello! I'm " + name + ".\nWhat can I do for you?");
+        showMessage(name + " online. What's on your agenda?");
     }
 
     @Override

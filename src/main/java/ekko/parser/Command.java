@@ -58,6 +58,6 @@ public enum Command {
                 return command;
             }
         }
-        throw new EkkoException("I don't recognise that command.");
+        throw new EkkoException("Unknown command. A command reference has been provided. Use it.");
     }
 }

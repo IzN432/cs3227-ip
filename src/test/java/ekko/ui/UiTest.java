@@ -98,7 +98,7 @@ class UiTest {
                 + "|  |____ |  .  \\  |  .  \\  |  `--'  | \n"
                 + "|_______||__|\\__\\ |__|\\__\\  \\______/  \n";
         assertEquals("-".repeat(80) + "\n" + banner + "\n"
-                + "Hello! I'm Test Ekko.\nWhat can I do for you?\n\n"
+                + "Test Ekko online. What's on your agenda?\n\n"
                 + "-".repeat(80) + "\n", outputText());
     }
 }

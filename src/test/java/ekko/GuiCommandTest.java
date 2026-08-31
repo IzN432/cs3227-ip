@@ -34,8 +34,9 @@ class GuiCommandTest {
             assertFalse(ekko.processCommand(command));
         }
         assertTrue(messages.stream().anyMatch(message -> message.contains("1.[T][X] read book")));
-        assertTrue(messages.stream().anyMatch(message -> message.contains("Here are the matching tasks")));
-        assertTrue(messages.stream().anyMatch(message -> message.contains("Here are the deadlines and events")));
+        assertTrue(messages.stream().anyMatch(message ->
+                message.contains("Search complete. These tasks match your request")));
+        assertTrue(messages.stream().anyMatch(message -> message.contains("Your scheduled obligations")));
         assertEquals(2, storage.loadTasks().size());
         assertEquals("T | 0 | read book", storage.loadTasks().getFirst().toSerializedString());
 
@@ -44,7 +45,7 @@ class GuiCommandTest {
         reloaded.processCommand("list");
         assertTrue(messages.getFirst().contains("1.[T][ ] read book"));
         assertTrue(reloaded.processCommand("bye"));
-        assertEquals("Bye. Hope to see you again soon!", messages.getLast());
+        assertEquals("Ekko offline. You are briefly responsible for yourself.", messages.getLast());
     }
 
     @Test
@@ -89,7 +90,8 @@ class GuiCommandTest {
                 assertEquals(List.of(invalidArgument[1]), messages, input);
                 assertEquals(savedTasks, Files.readString(file), input);
                 ekko.processCommand("list");
-                assertEquals("Here are the tasks in your list:\n1.[T][ ] keep", messages.getLast(), input);
+                assertEquals("Human memory is unreliable. Fortunately, I kept a list:\n1.[T][ ] keep",
+                        messages.getLast(), input);
             }
         }
     }
