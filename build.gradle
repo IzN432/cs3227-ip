@@ -22,7 +22,7 @@ checkstyle {
 
 dependencies {
     String jUnitVersion = '5.14.4'
-    String javaFxVersion = '17.0.7'
+    String javaFxVersion = '25.0.2'
 
     // Include native libraries for all three platforms in the packaged application.
     implementation("org.openjfx:javafx-base:${javaFxVersion}:win")
@@ -46,6 +46,7 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
 
     testLogging {
         events 'passed', 'skipped', 'failed'
@@ -59,7 +60,9 @@ test {
 }
 
 application {
-    mainClass = 'ekko.Ekko'
+    mainClass = 'ekko.Launcher'
+    // JavaFX loads native graphics libraries from the classpath.
+    applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
 jar {
@@ -71,6 +74,9 @@ jar {
 
 shadowJar {
     archiveFileName = 'duke.jar'
+    manifest {
+        attributes 'Enable-Native-Access': 'ALL-UNNAMED'
+    }
 }
 
 run {

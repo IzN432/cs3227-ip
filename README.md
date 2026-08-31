@@ -13,15 +13,65 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    1. If there are any further prompts, accept the defaults.
 1. Configure the project to use **JDK 25** (not other versions) as explained in [here](https://www.jetbrains.com/help/idea/sdk.html#set-up-jdk).<br>
    In the same dialog, set the **Project language level** field to the `SDK default` option.
-1. After that, locate the `src/main/java/ekko/Ekko.java` file, right-click it, and choose `Run Ekko.main()` (if the code editor is showing compile errors, try restarting the IDE). For an existing run configuration, change its main class to `ekko.Ekko`. If the setup is correct, you should see something like the below as the output:
-   ```
-    _______  __  ___  __  ___   ______
-   |   ____||  |/  / |  |/  /  /  __  \
-   |  |__   |  '  /  |  '  /  |  |  |  |
-   |   __|  |    <   |    <   |  |  |  |
-   |  |____ |  .  \  |  .  \  |  `--'  |
-   |_______||__|\__\ |__|\__\  \______/
-   ```
+1. Reload the Gradle project to download JavaFX dependencies.
+1. Run `src/main/java/ekko/Launcher.java` from IntelliJ, or set an existing run configuration's main class to `ekko.Launcher`. A window titled **Ekko** should appear.
+1. For a direct IntelliJ Application run configuration, open **Run > Edit Configurations**,
+   select the launcher configuration, choose **Modify options > Add VM options**, and enter
+   `--enable-native-access=ALL-UNNAMED`. Gradle runs already include this option.
+
+## Using the chatbot GUI
+
+Run with Java 25:
+
+```powershell
+.\gradlew.bat run
+```
+
+On macOS/Linux, use `./gradlew run`. The JavaFX `Main` application is started through a separate
+`Launcher`, following the [JavaFX tutorial Part 1](https://se-education.org/guides/tutorials/javaFxPart1.html).
+
+Gradle runs, tests, generated launch scripts, and the executable JAR enable native access for
+JavaFX's platform libraries. The JAR carries this permission in its manifest, so `java -jar`
+needs no extra flag. This grants native access to all classpath code; only use trusted dependencies.
+The tutorial's `Unsupported JavaFX configuration: classes were loaded from 'unnamed module'`
+warning can still appear because this project uses classpath packaging. The tutorial explicitly
+allows ignoring it; removing its cause requires loading JavaFX on the module path instead.
+
+Type a command into the bottom field, then press **Enter** or click **Send**. Your command
+appears immediately, followed by a 750 ms pause showing **Ekko is thinking...** before the reply.
+Input is disabled during the pause to prevent duplicate submissions. Closing the window during
+the pause cancels the pending command. The scrollable conversation shows your commands and
+Ekko's replies. Examples:
+
+```text
+todo read a book
+deadline report /by 2026-09-02
+event lunch /from 2026-09-02 1200 /to 2026-09-02 1300
+list
+mark 1
+unmark 1
+find book
+agenda 2026-09-02
+delete 1
+bye
+```
+
+Tasks are saved after changes to `data/ekko.txt`, relative to the working directory, and loaded
+on startup. If saved data is invalid, a confirmation dialog asks before deleting it; choosing
+No or closing the dialog preserves the file and ends the session. File-access errors appear
+in the conversation and disable commands so that unsaved edits cannot accumulate.
+After `bye`, the farewell stays visible; close the window to exit.
+
+To build and run the bundled application:
+
+```powershell
+.\gradlew.bat shadowJar
+java -jar build/libs/duke.jar
+```
+
+The original console interface remains available by running `ekko.Ekko` directly in IntelliJ.
+JavaFX control tests require a desktop display; on headless Linux use Xvfb. Command and storage
+tests run without a display.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
 

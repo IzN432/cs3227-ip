@@ -75,6 +75,34 @@ public class Ekko {
         }
     }
 
+    public boolean canStart() {
+        return canStart;
+    }
+
+    /**
+     * Processes one GUI command without waiting for console input.
+     * Validation failures are displayed through the supplied UI.
+     *
+     * @param input complete command entered by the user.
+     * @return whether the caller should stop accepting commands.
+     * @throws IOException if saving fails; callers should stop the session to avoid unsaved edits.
+     */
+    public boolean processCommand(String input) throws IOException {
+        if (!canStart) {
+            return true;
+        }
+        try {
+            boolean shouldExit = handleInput(input.trim());
+            if (shouldExit) {
+                ui.showMessage("Bye. Hope to see you again soon!");
+            }
+            return shouldExit;
+        } catch (EkkoException | IllegalArgumentException e) {
+            ui.showMessage(e.getMessage());
+            return false;
+        }
+    }
+
     /**
      * Lets the user decide whether a malformed saved-data file should be deleted.
      * Deleting the file allows Ekko to start with an empty task list; keeping it
