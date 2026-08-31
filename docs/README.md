@@ -112,10 +112,6 @@ Shows deadlines due that day and events spanning that day, including both the st
 and end dates. Completed tasks are included; to-dos are not. Results retain task-list
 order rather than being sorted by time. Use a date without a time.
 
-> **Task numbers:** `find` and `agenda` show the same task numbers as `list`, so results
-> may have gaps. Use these numbers directly with `mark`, `unmark`, or `delete`.
-> After deleting a task, run your search or `list` again because later task numbers shift.
-
 ### Delete a task: `delete`
 
 **Format:** `delete NUMBER`

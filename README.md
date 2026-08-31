@@ -60,10 +60,6 @@ delete 1
 bye
 ```
 
-`find` and `agenda` retain each task's full-list number, so results may have gaps.
-Use those numbers directly with `mark`, `unmark`, or `delete`. After a deletion,
-run the search or `list` again to refresh the numbers.
-
 Tasks are saved after changes to `data/ekko.txt`, relative to the working directory, and loaded
 on startup. If saved data is invalid, a confirmation dialog asks before deleting it; choosing
 No or closing the dialog preserves the file and ends the session. File-access errors appear
