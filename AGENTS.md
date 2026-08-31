@@ -30,10 +30,14 @@ Ensure that Java 25 is used when running the application or build tasks. On macO
 
 ## Testing
 
+JUnit coverage target: focus tests on approximately the top 50% highest-value methods in the codebase, prioritizing complex, core, or critical business logic. This is a risk-based method-selection target, not a strict cap or a measured line-coverage percentage. Cover reasonable normal, boundary, and invalid-input cases for selected methods; avoid adding tests for trivial accessors just to increase counts. Keep JUnit tests under `src/test/java` in the corresponding production package, with test classes named `<ClassName>Test`.
+
 After every code update:
 
-1. Review `test/ui-test-plan.md` and update its test cases, expected output, and test-design reasons when the code change affects or adds user-visible behavior.
-2. Invoke the `run-ekko-ui-tests` skill to run the complete UI test plan, even when no update to the test plan is needed.
+1. Review and update JUnit tests as needed to comply with the approximately 50% highest-value-method coverage target. Add or revise tests for affected high-value methods, including regression cases for bug fixes. If no JUnit changes are needed, explain why.
+2. Run the complete JUnit suite through Gradle using Java 25 (`./gradlew test`, or `.\gradlew.bat test` on Windows).
+
+JUnit is the authoritative automated regression suite. Keep its test cases and fixtures self-contained under `src/test`; do not load expected behavior from documentation or invoke an LLM/skill as part of JUnit execution. Cover user-visible behavior changes with JUnit tests as well as core logic.
 
 ## Git
 
