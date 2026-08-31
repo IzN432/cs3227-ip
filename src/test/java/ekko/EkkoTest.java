@@ -100,6 +100,24 @@ class EkkoTest {
     }
 
     @Test
+    void mainLoop_successErrorAndBye_preservesConsoleSpacing() throws IOException {
+        Path file = directory.resolve("tasks.txt");
+        String output = runLoop(new Storage(file), "list\nunknown\nbye\ntodo ignored\n")
+                .replace("\r\n", "\n");
+        String separator = "-".repeat(80) + "\n";
+        String expectedTranscript = "What can I do for you?\n\n"
+                + separator + "\n" + separator
+                + "No tasks found!\n\n"
+                + separator + "\n" + separator
+                + "I don't recognise that command.\n\n"
+                + separator + "\n" + separator
+                + "Bye. Hope to see you again soon!\n\n" + separator;
+
+        assertTrue(output.endsWith(expectedTranscript), output);
+        assertFalse(Files.exists(file));
+    }
+
+    @Test
     void mainLoop_bye_ignoresFollowingCommands() throws IOException {
         Path file = directory.resolve("tasks.txt");
         runLoop(new Storage(file), "bye\ntodo ignored\n");

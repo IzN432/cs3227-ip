@@ -129,10 +129,10 @@ public class Ekko {
     public void mainLoop() throws IOException {
         ui.showWelcome(getName());
 
-        String input = ui.readCommand();
-        ui.showSeparator();
         boolean shouldExit = false;
-        while (!shouldExit) {
+        do {
+            String input = ui.readCommand();
+            ui.showSeparator();
             try {
                 shouldExit = handleInput(input);
             } catch (EkkoException | IllegalArgumentException e) {
@@ -140,10 +140,8 @@ public class Ekko {
             }
             if (!shouldExit) {
                 ui.showSeparator();
-                input = ui.readCommand();
-                ui.showSeparator();
             }
-        }
+        } while (!shouldExit);
         ui.showMessage("Bye. Hope to see you again soon!");
         ui.showSeparator();
     }
