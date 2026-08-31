@@ -81,6 +81,15 @@ public class Ui {
     }
 
     /**
+     * Displays an error, preserving the console message format.
+     *
+     * @param message explanation of the failure.
+     */
+    public void showError(String message) {
+        showMessage(message);
+    }
+
+    /**
      * Displays numbered tasks with the supplied heading.
      *
      * @param heading text shown before the tasks.

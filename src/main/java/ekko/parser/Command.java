@@ -5,19 +5,45 @@ import java.util.Locale;
 import ekko.EkkoException;
 
 /**
- * Represents a command supported by Ekko.
+ * Defines supported commands and interface-independent reference text.
  */
 public enum Command {
-    TODO,
-    DEADLINE,
-    EVENT,
-    AGENDA,
-    LIST,
-    FIND,
-    MARK,
-    UNMARK,
-    DELETE,
-    BYE;
+    TODO("<description>", "Add a task without a date."),
+    DEADLINE("<description> /by <date/time>", "Add a task with a due date."),
+    EVENT("<description> /from <date/time> /to <date/time>", "Schedule a task with a start and end."),
+    AGENDA("<date>", "Show tasks scheduled for a date."),
+    LIST("", "Show all tasks and their task numbers."),
+    FIND("<keyword>", "Search task descriptions."),
+    MARK("<task number>", "Mark a task as done."),
+    UNMARK("<task number>", "Mark a task as not done."),
+    DELETE("<task number>", "Remove a task from your list."),
+    BYE("", "End the session.");
+
+    /** Human-readable argument syntax; empty for commands without arguments. */
+    private final String usage;
+    private final String description;
+
+    Command(String usage, String description) {
+        this.usage = usage;
+        this.description = description;
+    }
+
+    /**
+     * Returns the lowercase command word shared by parsing and help displays.
+     *
+     * @return command word independent of the system locale.
+     */
+    public String getWord() {
+        return name().toLowerCase(Locale.ROOT);
+    }
+
+    public String getUsage() {
+        return usage;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 
     /**
      * Converts a command word into its enum value.
@@ -28,7 +54,7 @@ public enum Command {
      */
     public static Command from(String commandWord) throws EkkoException {
         for (Command command : values()) {
-            if (command.name().toLowerCase(Locale.ROOT).equals(commandWord)) {
+            if (command.getWord().equals(commandWord)) {
                 return command;
             }
         }

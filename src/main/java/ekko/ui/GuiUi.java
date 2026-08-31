@@ -14,6 +14,7 @@ import ekko.task.Task;
  */
 public class GuiUi extends Ui {
     private final Consumer<String> display;
+    private final Consumer<String> displayError;
     private final Supplier<String> recoveryResponse;
 
     /**
@@ -23,8 +24,20 @@ public class GuiUi extends Ui {
      * @param recoveryResponse asks the user whether invalid data should be deleted.
      */
     public GuiUi(Consumer<String> display, Supplier<String> recoveryResponse) {
+        this(display, display, recoveryResponse);
+    }
+
+    /**
+     * Creates a graphical UI with a separate error presentation.
+     *
+     * @param display receives normal messages.
+     * @param displayError receives errors without relying on their wording.
+     * @param recoveryResponse asks whether invalid data should be deleted.
+     */
+    public GuiUi(Consumer<String> display, Consumer<String> displayError, Supplier<String> recoveryResponse) {
         super(InputStream.nullInputStream(), new PrintStream(OutputStream.nullOutputStream()));
         this.display = display;
+        this.displayError = displayError;
         this.recoveryResponse = recoveryResponse;
     }
 
@@ -46,6 +59,11 @@ public class GuiUi extends Ui {
     @Override
     public void showMessage(String message) {
         display.accept(message);
+    }
+
+    @Override
+    public void showError(String message) {
+        displayError.accept(message);
     }
 
     @Override

@@ -98,7 +98,7 @@ public class Ekko {
             }
             return shouldExit;
         } catch (EkkoException | IllegalArgumentException e) {
-            ui.showMessage(e.getMessage());
+            ui.showError(e.getMessage());
             return false;
         }
     }
@@ -111,7 +111,7 @@ public class Ekko {
      * @return {@code true} if the invalid file was deleted and startup can proceed.
      */
     private boolean handleInvalidDataFile() throws IOException {
-        ui.showMessage("The stored task data is invalid. Delete the data file? (y/n)");
+        ui.showError("The stored task data is invalid. Delete the data file? (y/n)");
         String response = ui.readOptionalResponse();
         if (response.equalsIgnoreCase("y") || response.equalsIgnoreCase("yes")) {
             storage.deleteDataFile();
@@ -136,7 +136,7 @@ public class Ekko {
             try {
                 shouldExit = handleInput(input);
             } catch (EkkoException | IllegalArgumentException e) {
-                ui.showMessage(e.getMessage());
+                ui.showError(e.getMessage());
             }
             if (!shouldExit) {
                 ui.showSeparator();

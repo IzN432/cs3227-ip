@@ -15,10 +15,16 @@ import java.util.concurrent.TimeUnit;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.junit.jupiter.api.AfterAll;
@@ -27,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import ekko.parser.Command;
 import ekko.storage.Storage;
 
 /**
@@ -41,7 +48,7 @@ class MainTest {
     private Stage stage;
     private TextField input;
     private Button send;
-    private TextArea conversation;
+    private VBox conversation;
     private Label status;
 
     @BeforeAll
@@ -80,14 +87,14 @@ class MainTest {
         openWindow(new Storage(file));
         long submittedAt = onFxThread(() -> {
             assertTrue(stage.isShowing());
-            assertFalse(conversation.isEditable());
-            assertTrue(conversation.getText().contains("Hello! I'm Ekko."));
+            assertTrue(stage.isResizable());
+            assertTrue(conversationText().contains("Hello! I'm Ekko."));
             input.setText("todo GUI task");
             long startedAt = System.nanoTime();
             send.fire();
             assertEquals("", input.getText());
-            assertTrue(conversation.getText().contains("You:\n" + "todo GUI task"));
-            assertFalse(conversation.getText().contains("I've added this task"));
+            assertTrue(conversationText().contains("You:\n" + "todo GUI task"));
+            assertFalse(conversationText().contains("I've added this task"));
             assertEquals("Ekko is thinking...", status.getText());
             assertTrue(input.isDisabled());
             assertTrue(send.isDisabled());
@@ -100,9 +107,9 @@ class MainTest {
         awaitReply();
         assertTrue(System.nanoTime() - submittedAt >= TimeUnit.MILLISECONDS.toNanos(700));
         onFxThread(() -> {
-            assertTrue(conversation.getText().contains("I've added this task"));
+            assertTrue(conversationText().contains("I've added this task"));
             assertEquals("T | 0 | GUI task", Files.readString(file).strip());
-            assertEquals(1, conversation.getText().split("I've added this task", -1).length - 1);
+            assertEquals(1, conversationText().split("I've added this task", -1).length - 1);
             assertFalse(input.isDisabled());
             assertFalse(send.isDisabled());
             return null;
@@ -110,18 +117,19 @@ class MainTest {
 
         submitAndWait("list", true);
         onFxThread(() -> {
-            assertTrue(conversation.getText().contains("1.[T][ ] GUI task"));
+            assertTrue(conversationText().contains("1.[T][ ] GUI task"));
             return null;
         });
         submitAndWait(" ", false);
         onFxThread(() -> {
-            assertTrue(conversation.getText().contains("Please enter a command."));
+            assertTrue(conversationText().contains("Please enter a command."));
             assertFalse(input.isDisabled());
+            assertEquals(1, conversation.lookupAll(".error-message").size());
             return null;
         });
         submitAndWait("bye", false);
         onFxThread(() -> {
-            assertTrue(conversation.getText().contains("Bye. Hope to see you again soon!"));
+            assertTrue(conversationText().contains("Bye. Hope to see you again soon!"));
             assertTrue(input.isDisabled());
             assertTrue(send.isDisabled());
             assertTrue(stage.isShowing());
@@ -133,7 +141,8 @@ class MainTest {
     void start_unreadableStorage_displaysErrorAndDisablesInput() throws Exception {
         openWindow(new Storage(directory));
         onFxThread(() -> {
-            assertTrue(conversation.getText().contains("Could not open the task file"));
+            assertTrue(conversationText().contains("Could not open the task file"));
+            assertEquals(1, conversation.lookupAll(".error-message").size());
             assertTrue(input.isDisabled());
             assertTrue(send.isDisabled());
             return null;
@@ -147,7 +156,8 @@ class MainTest {
         Files.writeString(parent, "blocks directory creation");
         submitAndWait("todo cannot save", false);
         onFxThread(() -> {
-            assertTrue(conversation.getText().contains("Could not save your changes"));
+            assertTrue(conversationText().contains("Could not save your changes"));
+            assertEquals(1, conversation.lookupAll(".error-message").size());
             assertTrue(input.isDisabled());
             assertTrue(send.isDisabled());
             return null;
@@ -171,10 +181,109 @@ class MainTest {
         delayElapsed.get(5, TimeUnit.SECONDS);
         onFxThread(() -> {
             assertFalse(Files.exists(file));
-            assertFalse(conversation.getText().contains("I've added this task"));
+            assertFalse(conversationText().contains("I've added this task"));
             assertEquals("", status.getText());
             return null;
         });
+    }
+
+    @Test
+    void conversation_longReply_wrapsWhenWindowNarrowsAndHelpCanExpand() throws Exception {
+        openWindow(new Storage(directory.resolve("tasks.txt")));
+        submitAndWait("todo " + "Prepare the project demonstration and review the task list. ".repeat(8), true);
+        double wideHeight = onFxThread(() -> {
+            assertEquals(1, conversation.lookupAll(".user-message").size());
+            assertEquals(2, conversation.lookupAll(".app-message").size());
+            assertTrue(conversation.lookupAll(".error-message").isEmpty());
+            Label body = (Label) ((VBox) ((HBox) conversation.getChildren().getLast())
+                    .getChildren().getFirst()).getChildren().get(1);
+            double height = body.getHeight();
+            stage.setWidth(420);
+            stage.setHeight(540);
+            return height;
+        });
+        submitAndWait("list", true);
+        onFxThread(() -> {
+            VBox message = (VBox) ((HBox) conversation.getChildren().get(2)).getChildren().getFirst();
+            Label body = (Label) message.getChildren().get(1);
+            assertTrue(body.getHeight() > wideHeight, "Long replies should wrap onto more lines.");
+            assertTrue(message.getWidth() <= conversation.getWidth());
+            assertTrue(send.localToScene(send.getBoundsInLocal()).getMaxX() <= stage.getScene().getWidth());
+            assertTrue(input.getWidth() > 100, "The composer should remain usable at minimum width.");
+            TitledPane help = (TitledPane) stage.getScene().lookup("#commandHelp");
+            assertFalse(help.isExpanded());
+            ScrollPane transcript = (ScrollPane) stage.getScene().lookup("#conversationScroll");
+            double conversationHeight = transcript.getHeight();
+            double scrollPosition = transcript.getVvalue();
+            double inputY = input.localToScene(input.getBoundsInLocal()).getMinY();
+            help.setExpanded(true);
+            stage.getScene().getRoot().layout();
+            assertEquals(conversationHeight, transcript.getHeight(), 0.1);
+            assertEquals(scrollPosition, transcript.getVvalue(), 0.001);
+            assertEquals(inputY, input.localToScene(input.getBoundsInLocal()).getMinY(), 0.1);
+            assertTrue(help.getContent().isVisible());
+            assertTrue(help.getContent().getBoundsInParent().getHeight() > 150,
+                    "The reference should show several rows at the normal window height.");
+            help.setExpanded(false);
+            stage.getScene().getRoot().layout();
+            assertEquals(conversationHeight, transcript.getHeight(), 0.1);
+            return null;
+        });
+    }
+
+    @Test
+    void commandReference_expanded_showsUsageAndScrollsToLastCommand() throws Exception {
+        openWindow(new Storage(directory.resolve("tasks.txt")));
+        onFxThread(() -> {
+            stage.setWidth(420);
+            stage.setHeight(360);
+            TitledPane help = (TitledPane) stage.getScene().lookup("#commandHelp");
+            help.setExpanded(true);
+            return null;
+        });
+        // Allow a reply cycle so the window manager can apply the smaller dimensions.
+        submitAndWait("list", true);
+        onFxThread(() -> {
+            ScrollPane suggestions = (ScrollPane) stage.getScene().lookup("#commandSuggestions");
+            VBox commands = (VBox) suggestions.getContent();
+            assertEquals(Command.values().length, commands.lookupAll(".command-suggestion").size());
+            for (Command command : Command.values()) {
+                VBox row = (VBox) commands.lookup("#suggestion-" + command.getWord());
+                TextFlow rowSyntax = (TextFlow) row.getChildren().getFirst();
+                Text usage = (Text) rowSyntax.getChildren().get(1);
+                assertEquals(command.getWord(), ((Text) rowSyntax.getChildren().getFirst()).getText());
+                assertEquals(command.getUsage().isEmpty() ? "" : "  " + command.getUsage(),
+                        usage.getText());
+                assertEquals(command.getDescription(), ((Label) row.getChildren().get(1)).getText());
+            }
+            VBox deadline = (VBox) commands.lookup("#suggestion-deadline");
+            TextFlow syntax = (TextFlow) deadline.getChildren().getFirst();
+            assertEquals("deadline", ((Text) syntax.getChildren().getFirst()).getText());
+            assertEquals("  <description> /by <date/time>", ((Text) syntax.getChildren().get(1)).getText());
+            assertTrue(commands.getHeight() > suggestions.getViewportBounds().getHeight());
+            Node lastCommand = commands.lookup("#suggestion-bye");
+            double beforeScroll = lastCommand.localToScene(lastCommand.getBoundsInLocal()).getMinY();
+            suggestions.setVvalue(1);
+            stage.getScene().getRoot().layout();
+            assertTrue(lastCommand.localToScene(lastCommand.getBoundsInLocal()).getMinY() < beforeScroll);
+            assertTrue(commands.getWidth() <= suggestions.getViewportBounds().getWidth() + 1);
+            assertTrue(send.localToScene(send.getBoundsInLocal()).getMaxY() <= stage.getScene().getHeight());
+            assertFalse(input.isDisabled());
+            return null;
+        });
+    }
+
+    /**
+     * Reads displayed message labels in conversation order.
+     */
+    private String conversationText() {
+        StringBuilder text = new StringBuilder();
+        for (Node row : conversation.getChildren()) {
+            VBox message = (VBox) ((HBox) row).getChildren().getFirst();
+            text.append(((Label) message.getChildren().getFirst()).getText()).append(":\n");
+            text.append(((Label) message.getChildren().get(1)).getText()).append("\n\n");
+        }
+        return text.toString();
     }
 
     /**
@@ -186,7 +295,7 @@ class MainTest {
             new Main().start(stage, storage);
             input = (TextField) stage.getScene().lookup("#commandInput");
             send = (Button) stage.getScene().lookup("#sendButton");
-            conversation = (TextArea) stage.getScene().lookup("#conversation");
+            conversation = (VBox) stage.getScene().lookup("#conversation");
             status = (Label) stage.getScene().lookup("#replyStatus");
             return null;
         });
