@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'checkstyle'
     id 'com.gradleup.shadow' version '9.5.1'
 }
 
@@ -11,6 +12,12 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+checkstyle {
+    toolVersion = '11.0.0'
+    // AB3 marks some rules as warnings; enforce those as well as errors.
+    maxWarnings = 0
 }
 
 dependencies {

@@ -46,8 +46,8 @@ class ArgumentParserTest {
     @Test
     void parse_multipleArguments_acceptsEitherOrder() {
         for (String input : new String[] {
-            "meeting /from Monday morning /to Tuesday evening",
-            "meeting /to Tuesday evening /from Monday morning"
+                "meeting /from Monday morning /to Tuesday evening",
+                "meeting /to Tuesday evening /from Monday morning"
         }) {
             ParsedArguments parsed = ArgumentParser.parse(input, Set.of(ArgumentName.FROM, ArgumentName.TO));
             assertEquals("meeting", parsed.getDescription());

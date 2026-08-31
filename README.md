@@ -25,6 +25,41 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
 
+## Checking code style
+
+Use JDK 25 for all Gradle commands. Checkstyle 11.0.0 checks production and test Java code:
+
+```powershell
+.\gradlew.bat checkstyleMain checkstyleTest
+```
+
+Run style checks and the complete JUnit suite together with `.\gradlew.bat check`.
+On macOS/Linux, use `./gradlew` instead of `.\gradlew.bat`.
+The `test` task alone runs JUnit, not Checkstyle. Both `check` and `build` include Checkstyle.
+Any unsuppressed warning or error fails the style check. HTML reports are written to
+`build/reports/checkstyle/main.html` and `build/reports/checkstyle/test.html`.
+
+The files in `config/checkstyle/` follow the
+[SE-EDU tutorial](https://se-education.org/guides/tutorials/checkstyle.html) and are adapted from
+[AddressBook Level 3](https://github.com/se-edu/addressbook-level3/tree/master/config/checkstyle).
+Project adaptations match the `seedu-java-coding-standard` skill and `AGENTS.md`:
+
+- Imports are grouped as static, Java platform, third-party, then `ekko`, alphabetically within each group.
+- Wrapped lines use eight extra spaces, and operators (including assignments) start the continuation line.
+- All types, including non-public test helpers, require Javadoc; test methods do not.
+- Lambda opening parentheses may start a new line without disabling the rule for method calls.
+
+Checkstyle catches mechanical violations; the skill and code review still cover judgment-based rules.
+Do not broadly suppress violations to make the build pass. Any necessary exception should be narrow and explained.
+
+### Optional IntelliJ integration
+
+Install the **CheckStyle-IDEA** plugin, then open **Settings > Tools > Checkstyle**.
+Select Checkstyle **11.0.0**, scan **Only Java sources (including tests)**, and add
+`config/checkstyle/checkstyle.xml` as a local configuration. Mark it active.
+If prompted for `config_loc`, set it to this project's absolute `config/checkstyle` directory.
+Gradle remains the shared, reproducible check regardless of IDE settings.
+
 ## Package structure
 
 All packages are below the `src/main/java` source root:

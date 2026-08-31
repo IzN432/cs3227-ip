@@ -34,19 +34,6 @@ public class Ekko {
     private final boolean canStart;
 
     /**
-     * Starts the console application if its saved data can be loaded or recovered.
-     *
-     * @param args command-line arguments, which are not used.
-     * @throws IOException if loading, recovery, or saving fails.
-     */
-    public static void main(String[] args) throws IOException {
-        Ekko instance = new Ekko();
-        if (instance.canStart) {
-            instance.mainLoop();
-        }
-    }
-
-    /**
      * Creates the application with console UI and default file storage.
      */
     public Ekko() throws IOException {
@@ -73,6 +60,19 @@ public class Ekko {
         }
         tasks = new TaskList(loadedTasks);
         canStart = canProceedWithStartup;
+    }
+
+    /**
+     * Starts the console application if its saved data can be loaded or recovered.
+     *
+     * @param args command-line arguments, which are not used.
+     * @throws IOException if loading, recovery, or saving fails.
+     */
+    public static void main(String[] args) throws IOException {
+        Ekko instance = new Ekko();
+        if (instance.canStart) {
+            instance.mainLoop();
+        }
     }
 
     /**
@@ -143,6 +143,7 @@ public class Ekko {
             case BYE -> {
                 // The main loop displays the farewell message after this method returns.
             }
+            default -> throw new AssertionError("Unhandled command: " + command);
         }
         return command == Command.BYE;
     }
