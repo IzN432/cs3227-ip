@@ -84,6 +84,6 @@ public class Ui {
      * Displays the separator between command interactions.
      */
     public void showSeparator() {
-        System.out.println("─".repeat(80));
+        System.out.println("-".repeat(80));
     }
 }

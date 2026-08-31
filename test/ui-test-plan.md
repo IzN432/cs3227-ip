@@ -6,7 +6,7 @@ The runner compiles Java sources recursively beneath `src/main/java` and launche
 
 ## Output comparison
 
-The automated runner removes the fixed startup banner, greeting, blank lines, and 80-character separators. It compares all remaining lines exactly, including task numbering, status markers, descriptions, date/time text, and confirmation or error messages. The special input line `<blank>` represents pressing Enter without typing anything.
+The automated runner removes the fixed startup banner, greeting, blank lines, and 80-character ASCII hyphen (`-`) separators. ASCII keeps separators readable in Gradle consoles with differing encodings. It compares all remaining lines exactly, including task numbering, status markers, descriptions, date/time text, and confirmation or error messages. The special input line `<blank>` represents pressing Enter without typing anything.
 
 An optional **Initial data file** block provides the contents of `data/ekko.txt` before Ekko starts. When omitted, neither the data directory nor the data file exists for that test.
 

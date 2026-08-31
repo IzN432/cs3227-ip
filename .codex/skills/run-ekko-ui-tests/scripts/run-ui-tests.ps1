@@ -27,7 +27,7 @@ function Normalize-ActualOutput([string] $output) {
     # Preserve recovery messages printed before the banner while still removing
     # the stable startup chrome that begins at the separator nearest the greeting.
     $bannerStart = $greetingEnd - 1
-    while ($bannerStart -ge 0 -and $lines[$bannerStart] -notmatch '^(?:─|\?){80}$') {
+    while ($bannerStart -ge 0 -and $lines[$bannerStart] -notmatch '^-{80}$') {
         $bannerStart--
     }
     $beforeBanner = if ($bannerStart -gt 0) { $lines[0..($bannerStart - 1)] } else { @() }
@@ -38,7 +38,7 @@ function Normalize-ActualOutput([string] $output) {
 
     return ($responseLines |
         ForEach-Object { $_.TrimEnd() } |
-        Where-Object { $_ -ne "" -and $_ -notmatch '^(?:─|\?){80}$' }) -join "`n"
+        Where-Object { $_ -ne "" -and $_ -notmatch '^-{80}$' }) -join "`n"
 }
 
 function Normalize-ExpectedOutput([string] $output) {
