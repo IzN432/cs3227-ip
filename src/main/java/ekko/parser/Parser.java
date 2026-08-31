@@ -22,7 +22,7 @@ public final class Parser {
             throw new EkkoException("Please enter a command.");
         }
 
-        String[] parts = input.split("\\s+", 2);
+        String[] parts = input.trim().split("\\s+", 2);
         Command command;
         try {
             command = Command.from(parts[0]);

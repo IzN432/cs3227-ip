@@ -23,6 +23,7 @@ public final class ArgumentParser {
      * @param argumentString all text following the command word.
      * @param availableArguments argument names recognized by the command.
      * @return the parsed description and argument values.
+     * @throws IllegalArgumentException if a recognized argument is specified more than once.
      */
     public static ParsedArguments parse(String argumentString, Set<ArgumentName> availableArguments) {
         ParsedArguments parsedArguments = new ParsedArguments();
@@ -40,6 +41,9 @@ public final class ArgumentParser {
         boolean hasNextArgument;
         do {
             ArgumentName argument = ArgumentName.fromText(matcher.group(1));
+            if (parsedArguments.containsArgument(argument)) {
+                throw new IllegalArgumentException("Specify /" + argument.getText() + " only once.");
+            }
             // The regex is built only from this command's allowed names.
             assert availableArguments.contains(argument) : "Matched argument must be allowed by the command";
             int valueStartIndex = matcher.end();

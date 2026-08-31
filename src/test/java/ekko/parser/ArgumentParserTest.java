@@ -2,6 +2,7 @@ package ekko.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
@@ -73,17 +74,15 @@ class ArgumentParserTest {
     }
 
     @Test
-    void parse_duplicateArgument_lastValueWins() {
-        ParsedArguments parsed = ArgumentParser.parse("book /by Monday /by Tuesday", Set.of(ArgumentName.BY));
-        assertEquals("Tuesday", parsed.getArgument(ArgumentName.BY));
-        assertEquals("book", parsed.getDescription());
+    void parse_duplicateArgument_rejectsInput() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ArgumentParser.parse("book /by Monday /by Tuesday", Set.of(ArgumentName.BY)));
     }
 
     @Test
-    void parse_duplicateEndingEmpty_doesNotKeepEarlierValue() {
-        ParsedArguments parsed = ArgumentParser.parse("book /by Monday /by", Set.of(ArgumentName.BY));
-        assertTrue(parsed.containsArgument(ArgumentName.BY));
-        assertEquals("", parsed.getArgument(ArgumentName.BY));
+    void parse_duplicateEndingEmpty_rejectsInput() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ArgumentParser.parse("book /by Monday /by", Set.of(ArgumentName.BY)));
     }
 
     @Test
@@ -104,14 +103,10 @@ class ArgumentParserTest {
     }
 
     @Test
-    void parse_interleavedDuplicates_preservesOtherValuesAndLastEmptyValue() {
-        ParsedArguments parsed = ArgumentParser.parse(
+    void parse_interleavedDuplicates_rejectsInput() {
+        assertThrows(IllegalArgumentException.class, () -> ArgumentParser.parse(
                 "meeting /from Monday /to Tuesday /from Wednesday /to",
-                Set.of(ArgumentName.FROM, ArgumentName.TO));
-        assertEquals("meeting", parsed.getDescription());
-        assertEquals("Wednesday", parsed.getArgument(ArgumentName.FROM));
-        assertTrue(parsed.containsArgument(ArgumentName.TO));
-        assertEquals("", parsed.getArgument(ArgumentName.TO));
+                Set.of(ArgumentName.FROM, ArgumentName.TO)));
     }
 
     @Test

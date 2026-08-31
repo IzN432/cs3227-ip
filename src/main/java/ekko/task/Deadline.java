@@ -16,10 +16,19 @@ public class Deadline extends Task {
      *
      * @param description task description without a storage delimiter.
      * @param by deadline date and time.
+     * @throws IllegalArgumentException if the deadline is null.
      */
     public Deadline(String description, LocalDateTime by) {
         super(description);
+        if (by == null) {
+            throw new IllegalArgumentException("A deadline must have a date/time.");
+        }
         this.by = by;
+    }
+
+    @Override
+    public boolean hasSameDetails(Task other) {
+        return super.hasSameDetails(other) && by.equals(((Deadline) other).by);
     }
 
     @Override

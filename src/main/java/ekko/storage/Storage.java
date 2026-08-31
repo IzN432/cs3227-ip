@@ -3,10 +3,12 @@ package ekko.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
 import ekko.task.Task;
+import ekko.task.TaskList;
 
 /**
  * Saves the current task list to the application's data file.
@@ -47,18 +49,34 @@ public final class Storage {
         for (String line : Files.readAllLines(dataFile)) {
             tasks.add(Task.fromSerializedString(line));
         }
-        return tasks;
+        return new TaskList(tasks).asList();
     }
 
     /**
      * Replaces the data file with one textual task representation per line.
+     * Writes to a sibling temporary file before atomically replacing the destination.
      *
      * @param tasks current tasks to save.
-     * @throws IOException if the data directory or file cannot be written.
+     * @throws IOException if writing or atomic replacement fails, including unsupported atomic moves.
+     * @throws IllegalArgumentException if the task list contains null or duplicate tasks.
      */
     public void saveTasks(List<Task> tasks) throws IOException {
         Files.createDirectories(dataFile.getParent());
-        Files.write(dataFile, tasks.stream().map(Task::toSerializedString).toList());
+        // Serialize and validate before touching the destination or creating a temporary file.
+        List<String> records = new TaskList(tasks).asList().stream().map(Task::toSerializedString).toList();
+        Path temporaryFile = Files.createTempFile(dataFile.getParent(), "ekko-", ".tmp");
+        try {
+            Files.write(temporaryFile, records);
+            // Fail safely if the filesystem cannot atomically replace the saved file.
+            Files.move(temporaryFile, dataFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException | RuntimeException e) {
+            try {
+                Files.deleteIfExists(temporaryFile);
+            } catch (IOException cleanupFailure) {
+                e.addSuppressed(cleanupFailure);
+            }
+            throw e;
+        }
     }
 
     /**

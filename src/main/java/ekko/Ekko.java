@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import ekko.datetime.DateTimeParser;
@@ -66,12 +67,17 @@ public class Ekko {
      * Starts the console application if its saved data can be loaded or recovered.
      *
      * @param args command-line arguments, which are not used.
-     * @throws IOException if loading, recovery, or saving fails.
      */
-    public static void main(String[] args) throws IOException {
-        Ekko instance = new Ekko();
-        if (instance.canStart) {
-            instance.mainLoop();
+    public static void main(String[] args) {
+        Ui console = new Ui();
+        try {
+            Ekko instance = new Ekko(console, new Storage());
+            if (instance.canStart) {
+                instance.mainLoop();
+            }
+        } catch (IOException e) {
+            console.showError("Could not access the task file: " + e.getMessage()
+                    + "\nChanges may not be saved. Fix the file access problem and restart Ekko.");
         }
     }
 
@@ -131,6 +137,9 @@ public class Ekko {
 
         boolean shouldExit = false;
         do {
+            if (!ui.hasNextCommand()) {
+                break;
+            }
             String input = ui.readCommand();
             ui.showSeparator();
             try {
@@ -155,6 +164,11 @@ public class Ekko {
         Parser.ParsedCommand parsedCommand = Parser.parse(input);
         Command command = parsedCommand.command();
         String arguments = parsedCommand.arguments();
+
+        if ((command == Command.LIST || command == Command.BYE) && !arguments.isBlank()) {
+            throw new EkkoException("The " + command.name().toLowerCase(Locale.ROOT)
+                    + " command does not accept arguments.");
+        }
 
         switch (command) {
             case TODO -> addTodo(arguments);
@@ -202,7 +216,7 @@ public class Ekko {
     }
 
     /**
-     * Validates both event endpoints and rejects an end before the start.
+     * Validates both event endpoints before the event enforces their chronological order.
      */
     private void addEvent(String arguments) throws IOException, EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(
@@ -224,9 +238,6 @@ public class Ekko {
 
         LocalDateTime start = parseDateTime(from);
         LocalDateTime end = parseDateTime(to);
-        if (end.isBefore(start)) {
-            throw new EkkoException("An event's /to date/time cannot be before its /from date/time.");
-        }
         addTask(new Event(parsed.getDescription(), start, end));
     }
 
@@ -252,7 +263,7 @@ public class Ekko {
             return;
         }
 
-        ui.showTasks("Your scheduled obligations on " + formattedDate + ":", matchingTasks);
+        ui.showTasks("Your scheduled obligations on " + formattedDate + ":", matchingTasks, tasks.asList());
     }
 
     /**
@@ -370,7 +381,7 @@ public class Ekko {
         if (matchingTasks.isEmpty()) {
             ui.showMessage("No matching tasks. Check your spelling before questioning my competence.");
         } else {
-            ui.showTasks("Search complete. These tasks match your request:", matchingTasks);
+            ui.showTasks("Search complete. These tasks match your request:", matchingTasks, tasks.asList());
         }
     }
 

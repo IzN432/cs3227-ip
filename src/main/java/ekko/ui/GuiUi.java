@@ -3,11 +3,8 @@ package ekko.ui;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import ekko.task.Task;
 
 /**
  * Routes existing chatbot output and recovery prompts to a graphical interface.
@@ -64,15 +61,6 @@ public class GuiUi extends Ui {
     @Override
     public void showError(String message) {
         displayError.accept(message);
-    }
-
-    @Override
-    public void showTasks(String heading, List<Task> tasks) {
-        StringBuilder message = new StringBuilder(heading);
-        for (int i = 0; i < tasks.size(); i++) {
-            message.append('\n').append(i + 1).append('.').append(tasks.get(i));
-        }
-        showMessage(message.toString());
     }
 
     @Override

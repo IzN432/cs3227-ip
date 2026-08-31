@@ -28,6 +28,42 @@ class StorageTest {
     Path directory;
 
     @Test
+    void loadTasks_invalidTaskDetails_rejectsWithoutChangingFile() throws IOException {
+        Path file = directory.resolve("tasks.txt");
+        for (String record : List.of("T | 0 | ", "T | 0 | same\nT | 1 | same",
+                "E | 0 | trip | 2026-09-01 | 2026-09-01",
+                "E | 0 | trip | 2026-09-02 | 2026-09-01")) {
+            Files.writeString(file, record);
+            assertThrows(IllegalArgumentException.class, () -> new Storage(file).loadTasks(), record);
+            assertEquals(record, Files.readString(file));
+        }
+    }
+
+    @Test
+    void saveTasks_replacementFails_preservesDestinationAndCleansTemporaryFile() throws IOException {
+        Path destination = Files.createDirectory(directory.resolve("tasks.txt"));
+        Path sentinel = destination.resolve("keep.txt");
+        Files.writeString(sentinel, "keep");
+        assertThrows(IOException.class,
+                () -> new Storage(destination).saveTasks(List.of(new Todo("new"))));
+        assertEquals("keep", Files.readString(sentinel));
+        try (var files = Files.list(directory)) {
+            assertEquals(List.of(destination), files.toList());
+        }
+    }
+
+    @Test
+    void saveTasks_invalidList_preservesExistingFile() throws IOException {
+        Path file = directory.resolve("tasks.txt");
+        Storage storage = new Storage(file);
+        storage.saveTasks(List.of(new Todo("keep")));
+        String saved = Files.readString(file);
+        assertThrows(IllegalArgumentException.class,
+                () -> storage.saveTasks(List.of(new Todo("same"), new Todo("same"))));
+        assertEquals(saved, Files.readString(file));
+    }
+
+    @Test
     void loadTasks_missingOrEmptyFile_returnsEmptyList() throws IOException {
         Path file = directory.resolve("data/tasks.txt");
         Storage storage = new Storage(file);

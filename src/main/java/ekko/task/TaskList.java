@@ -16,15 +16,25 @@ public class TaskList {
      * Creates a task list containing the supplied tasks in their original order.
      *
      * @param tasks initial tasks.
+     * @throws IllegalArgumentException if the list contains null or duplicate tasks.
      */
     public TaskList(List<Task> tasks) {
-        this.tasks = new ArrayList<>(tasks);
+        this.tasks = new ArrayList<>();
+        tasks.forEach(this::add);
     }
 
     /**
      * Appends a task to the end of the displayed list.
+     *
+     * @throws IllegalArgumentException if the task is null or has the same details as an existing task.
      */
     public void add(Task task) {
+        if (task == null) {
+            throw new IllegalArgumentException("A task is required.");
+        }
+        if (tasks.stream().anyMatch(existing -> existing.hasSameDetails(task))) {
+            throw new IllegalArgumentException("A task with the same details already exists.");
+        }
         tasks.add(task);
     }
 

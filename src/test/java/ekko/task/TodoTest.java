@@ -1,6 +1,7 @@
 package ekko.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,9 +22,7 @@ class TodoTest {
     }
 
     @Test
-    void toString_emptyDescription_preservesEmptyValue() {
-        Todo todo = new Todo("");
-        assertEquals("[T][ ] ", todo.toString());
-        assertEquals("T | 0 | ", todo.toSerializedString());
+    void constructor_emptyDescription_rejectsTask() {
+        assertThrows(IllegalArgumentException.class, () -> new Todo(""));
     }
 }

@@ -19,6 +19,27 @@ import ekko.EkkoException;
  */
 class TaskListTest {
     @Test
+    void add_duplicateDetails_rejectsButDistinctTypesAndSchedulesRemainAllowed() throws EkkoException {
+        var start = LocalDate.of(2026, 9, 1).atStartOfDay();
+        List<Task> originals = List.of(new Todo("same"), new Deadline("same", start),
+                new Event("same", start, start.plusDays(1)));
+        TaskList tasks = new TaskList(originals);
+        for (int index = 0; index < originals.size(); index++) {
+            Task duplicate = Task.fromSerializedString(originals.get(index).toSerializedString());
+            tasks.mark(index + 1);
+            assertThrows(IllegalArgumentException.class, () -> tasks.add(duplicate));
+            assertEquals(3, tasks.size());
+        }
+        tasks.add(new Todo("Same"));
+        tasks.add(new Deadline("same", start.plusNanos(1)));
+        tasks.add(new Event("same", start, start.plusDays(2)));
+        tasks.add(new Event("same", start.plusNanos(1), start.plusDays(1)));
+        assertEquals(7, tasks.size());
+        assertThrows(IllegalArgumentException.class,
+                () -> new TaskList(List.of(new Todo("same"), new Todo("same"))));
+    }
+
+    @Test
     void constructor_andAsList_isolateListStructure() {
         Todo first = new Todo("first");
         List<Task> source = new ArrayList<>(List.of(first));

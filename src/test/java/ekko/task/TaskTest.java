@@ -16,6 +16,18 @@ import org.junit.jupiter.api.Test;
  */
 class TaskTest {
     @Test
+    void constructor_unsafeDescriptions_rejectsEveryTaskType() {
+        LocalDateTime start = LocalDateTime.of(2026, 9, 1, 12, 0);
+        for (String description : new String[] {null, "", "  ", "first\nsecond", "first\rsecond",
+                "hidden\u0000text", "tab\ttext"}) {
+            assertThrows(IllegalArgumentException.class, () -> new Todo(description));
+            assertThrows(IllegalArgumentException.class, () -> new Deadline(description, start));
+            assertThrows(IllegalArgumentException.class,
+                    () -> new Event(description, start, start.plusHours(1)));
+        }
+    }
+
+    @Test
     void constructor_pipeInDescription_rejectsEveryTaskType() {
         LocalDateTime date = LocalDateTime.of(2026, 9, 1, 18, 0);
         for (String description : List.of("|", "|leading", "trailing|", "a | b", "a||b")) {
@@ -45,9 +57,9 @@ class TaskTest {
     }
 
     @Test
-    void fromSerializedString_compactDelimitersAndEmptyDescription_loadsTask() {
+    void fromSerializedString_compactDelimiters_loadsTask() {
         assertEquals("[T][X] book", Task.fromSerializedString("T|1|book").toString());
-        assertEquals("[T][ ] ", Task.fromSerializedString("T | 0 | ").toString());
+        assertThrows(IllegalArgumentException.class, () -> Task.fromSerializedString("T | 0 | "));
         assertEquals("[T][ ] café 学习", Task.fromSerializedString("T | 0 | café 学习").toString());
     }
 

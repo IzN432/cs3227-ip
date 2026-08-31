@@ -37,6 +37,12 @@ non-midnight times like `Sep 02 2026, 6:00 PM`.
 
 ## Features
 
+> **Duplicates:** For `todo`, `deadline`, and `event`, Ekko rejects tasks with the same
+> type, description, and schedule, even if the existing task is completed. Description
+> matching is case-sensitive and ignores spaces at the edges. A different type or schedule is allowed.
+
+---
+
 ### Add a to-do: `todo`
 
 Adds a task without a date.
@@ -44,8 +50,6 @@ Adds a task without a date.
 **Format:** `todo DESCRIPTION`
 
 **Example:** `todo read a book`
-
-Ekko confirms the new task and shows the updated task count.
 
 ### Add a deadline: `deadline`
 
@@ -55,8 +59,6 @@ Adds a task with a due date and optional time.
 
 **Example:** `deadline submit report /by 2026-09-02 1800`
 
-The report is due on September 2, 2026 at 6:00 PM. You can omit the time if you only need a date.
-
 ### Add an event: `event`
 
 Adds a task with a start and end. The end must be strictly after the start.
@@ -64,13 +66,6 @@ Adds a task with a start and end. The end must be strictly after the start.
 **Format:** `event DESCRIPTION /from DATE_TIME /to DATE_TIME`
 
 **Example:** `event team meeting /from 2026-09-02 1400 /to 2026-09-02 1500`
-
-This schedules a meeting from 2:00 PM to 3:00 PM. Events can span multiple days;
-include a date in both endpoints.
-
-> **Duplicates:** Ekko rejects tasks with the same type, description, and schedule,
-> even if the existing task is completed. Description matching is case-sensitive and
-> ignores spaces at the edges. A different type or schedule is allowed.
 
 ### View all tasks: `list`
 
@@ -86,7 +81,7 @@ For example, after adding the three tasks above:
 ```
 
 `[T]`, `[D]`, and `[E]` mean to-do, deadline, and event. `[ ]` means incomplete;
-`[X]` means completed. An empty list produces a message instead.
+`[X]` means completed.
 
 ### Mark or unmark a task: `mark`, `unmark`
 
@@ -104,8 +99,8 @@ Searches descriptions for an exact, **case-sensitive substring or phrase**.
 **Examples:** `find book` matches `read a book` but not `Book tickets`;
 `find team meeting` searches for that whole phrase.
 
-Dates, task types, and completion markers are not searched. Both completed and incomplete
-matches appear in their original order. Ekko tells you if nothing matches.
+> **Search scope:** Dates, task types, and completion markers are not searched.
+> Both completed and incomplete matches appear in their original order.
 
 ### View a day's schedule: `agenda`
 
@@ -117,9 +112,9 @@ Shows deadlines due that day and events spanning that day, including both the st
 and end dates. Completed tasks are included; to-dos are not. Results retain task-list
 order rather than being sorted by time. Use a date without a time.
 
-> **Task numbers:** `find` and `agenda` number their results from 1 but do not change
-> the full list. Always run `list` to get the correct number before using `mark`,
-> `unmark`, or `delete`. Use a whole number from 1 to the number of tasks in that list.
+> **Task numbers:** `find` and `agenda` show the same task numbers as `list`, so results
+> may have gaps. Use these numbers directly with `mark`, `unmark`, or `delete`.
+> After deleting a task, run your search or `list` again because later task numbers shift.
 
 ### Delete a task: `delete`
 
@@ -135,12 +130,14 @@ again before deleting another task.
 
 Ekko displays a farewell and stops accepting commands. Close the window to exit.
 
-## Saving and troubleshooting
+## Saving
 
 Tasks are saved automatically after changes and loaded when Ekko starts. There is no
 save command. The file is `data/ekko.txt`, relative to the folder you launch Ekko from.
 Launch from the same folder each time to keep using the same task list. To back up your
 tasks, close Ekko and copy this file somewhere safe.
+
+## Troubleshooting
 
 - **Invalid command:** Read Ekko's error, check the format above, and try again.
 - **Invalid saved data:** Ekko asks whether to delete the file. Choose **No** (or dismiss

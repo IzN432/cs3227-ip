@@ -60,11 +60,30 @@ delete 1
 bye
 ```
 
+`find` and `agenda` retain each task's full-list number, so results may have gaps.
+Use those numbers directly with `mark`, `unmark`, or `delete`. After a deletion,
+run the search or `list` again to refresh the numbers.
+
 Tasks are saved after changes to `data/ekko.txt`, relative to the working directory, and loaded
 on startup. If saved data is invalid, a confirmation dialog asks before deleting it; choosing
 No or closing the dialog preserves the file and ends the session. File-access errors appear
 in the conversation and disable commands so that unsaved edits cannot accumulate.
 After `bye`, the farewell stays visible; close the window to exit.
+
+Commands tolerate leading/trailing spaces and repeated whitespace between the command and its arguments.
+Required descriptions, dates, and task numbers must be present. Specify each `/by`, `/from`, or `/to`
+argument only once. `list` and `bye` do not accept arguments. Descriptions cannot contain `|` or control
+characters such as embedded newlines. Ordinary punctuation and Unicode text are allowed.
+
+Dates must exist in the calendar, and an event must end strictly after it starts. A duplicate has the same
+task type, case-sensitive description (after trimming its edges), and date/time values; completion status
+does not distinguish tasks. The same description with a different task type or schedule is allowed.
+These rules also apply to saved data. If an older file contains duplicates, blank descriptions, or invalid
+event intervals, choose **No** at the recovery prompt to preserve it, then correct the file before restarting.
+
+Saving writes a temporary file in the data directory and atomically replaces the original only after writing
+finishes. If atomic replacement is unsupported or fails, Ekko reports a save error instead of falling back
+to overwriting the original directly. This protects against partial writes, but is not a backup system.
 
 To build and run the bundled application:
 

@@ -12,15 +12,22 @@ public abstract class Task {
     private final String description;
 
     /**
-     * Creates a task whose description cannot conflict with the storage delimiter.
+     * Creates a task with a nonblank description safe for storage as a single line.
      *
-     * @throws IllegalArgumentException if the description contains {@code |}.
+     * @throws IllegalArgumentException if the description is null, blank, or contains
+     *         control characters or the storage delimiter {@code |}.
      */
     protected Task(String description) {
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("Task descriptions cannot be empty.");
+        }
+        if (description.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("Task descriptions cannot contain control characters.");
+        }
         if (description.contains("|")) {
             throw new IllegalArgumentException("Task descriptions cannot contain '|'.");
         }
-        this.description = description;
+        this.description = description.trim();
         isMarked = false;
     }
 
@@ -34,6 +41,14 @@ public abstract class Task {
 
     protected String getDescription() {
         return description;
+    }
+
+    /**
+     * Compares task type and case-sensitive description, ignoring completion status.
+     * Dated task types additionally compare their full date/time values.
+     */
+    public boolean hasSameDetails(Task other) {
+        return other != null && getClass().equals(other.getClass()) && description.equals(other.description);
     }
 
     /**

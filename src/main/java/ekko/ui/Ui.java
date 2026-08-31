@@ -44,6 +44,13 @@ public class Ui {
     }
 
     /**
+     * Returns whether another console command is available, allowing a clean exit at end of input.
+     */
+    public boolean hasNextCommand() {
+        return scanner.hasNextLine();
+    }
+
+    /**
      * Reads a response when input may have ended, such as during startup recovery.
      *
      * @return the response, or an empty string when no line is available.
@@ -96,11 +103,25 @@ public class Ui {
      * @param tasks tasks to display.
      */
     public void showTasks(String heading, List<Task> tasks) {
-        output.println(heading);
-        for (int i = 0; i < tasks.size(); i++) {
-            output.printf("%d.%s%n", i + 1, tasks.get(i));
+        showTasks(heading, tasks, tasks);
+    }
+
+    /**
+     * Displays matching tasks using their current numbers and order in the full task list.
+     *
+     * @param heading text shown before the tasks.
+     * @param matchingTasks task instances selected from the full list.
+     * @param allTasks full task list whose positions define the displayed numbers.
+     */
+    public void showTasks(String heading, List<Task> matchingTasks, List<Task> allTasks) {
+        StringBuilder message = new StringBuilder(heading);
+        for (int i = 0; i < allTasks.size(); i++) {
+            Task task = allTasks.get(i);
+            if (matchingTasks.contains(task)) {
+                message.append('\n').append(i + 1).append('.').append(task);
+            }
         }
-        output.println();
+        showMessage(message.toString());
     }
 
     /**

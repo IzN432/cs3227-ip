@@ -2,6 +2,7 @@ package ekko.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
@@ -27,11 +28,13 @@ class EventTest {
     }
 
     @Test
-    void occursOn_equalEndpoints_matchesOnlyThatDate() {
-        Event event = new Event("meeting", start.atTime(12, 0), start.atTime(12, 0));
-        assertTrue(event.occursOn(start));
-        assertFalse(event.occursOn(start.minusDays(1)));
-        assertFalse(event.occursOn(start.plusDays(1)));
+    void constructor_equalOrReversedEndpoints_rejectsEvent() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Event("meeting", start.atTime(12, 0), start.atTime(12, 0)));
+        assertThrows(IllegalArgumentException.class,
+                () -> new Event("meeting", start.atTime(12, 0), start.atTime(11, 0)));
+        Event shortest = new Event("meeting", start.atTime(12, 0), start.atTime(12, 0).plusNanos(1));
+        assertTrue(shortest.occursOn(start));
     }
 
     @Test

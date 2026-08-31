@@ -19,11 +19,12 @@ final class CommandScenarios {
                         "agenda 2/12/2019\n"
                                 + "bye\n",
                         "Your scheduled obligations on Dec 02 2019:\n"
-                                + "1.[D][ ] return book (by: Dec 02 2019, 6:00 PM)\n"
-                                + "2.[E][ ] conference (from: Dec 01 2019, 9:00 AM to: Dec 03 2019, 5:00 PM)\n"
+                                + "2.[D][ ] return book (by: Dec 02 2019, 6:00 PM)\n"
+                                + "4.[E][ ] conference (from: Dec 01 2019, 9:00 AM to: Dec 03 2019, 5:00 PM)\n"
                                 + "Ekko offline. You are briefly responsible for yourself.",
                         "T | 0 | undated task\n"
                                 + "D | 0 | return book | 2019-12-02T18:00\n"
+                                + "T | 0 | another undated task\n"
                                 + "E | 0 | conference | 2019-12-01T09:00 | 2019-12-03T17:00"),
                 new Scenario("AGENDA-02",
                         "agenda 2019-12-03\n"
@@ -201,7 +202,7 @@ final class CommandScenarios {
                 new Scenario("EVENT-08",
                         "event meeting /from 2019-12-03 1400 /to 2019-12-02 1600\n"
                                 + "bye\n",
-                        "An event's /to date/time cannot be before its /from date/time.\n"
+                        "An event's /to date/time must be after its /from date/time.\n"
                                 + "Ekko offline. You are briefly responsible for yourself.",
                         null),
                 new Scenario("LIST-01",

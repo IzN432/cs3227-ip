@@ -83,6 +83,19 @@ class UiTest {
     }
 
     @Test
+    void showTasks_filteredList_preservesFullListNumbersIncludingGaps() {
+        Todo first = new Todo("first");
+        Todo second = new Todo("second");
+        Todo third = new Todo("third");
+        Todo fourth = new Todo("fourth");
+        fourth.setMarked(true);
+
+        ui("").showTasks("Matches:", List.of(second, fourth), List.of(first, second, third, fourth));
+
+        assertEquals("Matches:\n2.[T][ ] second\n4.[T][X] fourth\n\n", outputText());
+    }
+
+    @Test
     void showSeparator_usesExactly80AsciiHyphens() {
         ui("").showSeparator();
         assertEquals("-".repeat(80) + "\n", outputText());

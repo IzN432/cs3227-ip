@@ -134,8 +134,8 @@ class EkkoTest {
         String output = runLoop(new Storage(file), "find book\nfind   read book  \nbye\n");
 
         assertEquals("Search complete. These tasks match your request:\n"
-                + "1.[T][X] read book\n2.[D][ ] return book (by: Sep 01 2026)\n"
-                + "Search complete. These tasks match your request:\n1.[T][X] read book\n"
+                + "2.[T][X] read book\n3.[D][ ] return book (by: Sep 01 2026)\n"
+                + "Search complete. These tasks match your request:\n2.[T][X] read book\n"
                 + "Ekko offline. You are briefly responsible for yourself.", normalize(output));
         assertEquals(savedTasks, Files.readString(file));
     }
@@ -176,13 +176,20 @@ class EkkoTest {
     }
 
     @Test
-    void mainLoop_equalEventEndpoints_acceptsAndPersistsEvent() throws IOException {
+    void mainLoop_endOfInput_exitsCleanlyAfterSaving() throws IOException {
+        Storage storage = new Storage(directory.resolve("tasks.txt"));
+        String output = runLoop(storage, "todo keep\n");
+        assertTrue(output.contains("Ekko offline."));
+        assertEquals(1, storage.loadTasks().size());
+    }
+
+    @Test
+    void mainLoop_equalEventEndpoints_rejectsWithoutSaving() throws IOException {
         Storage storage = new Storage(directory.resolve("tasks.txt"));
         String output = runLoop(storage,
                 "event meeting /from 2026-09-01 1800 /to 2026-09-01 1800\nbye\n");
-        assertTrue(output.contains("Added to your agenda. Your memory has been relieved of duty:"));
-        assertEquals("E | 0 | meeting | 2026-09-01T18:00 | 2026-09-01T18:00",
-                storage.loadTasks().getFirst().toSerializedString());
+        assertTrue(output.contains("An event's /to date/time must be after its /from date/time."));
+        assertTrue(storage.loadTasks().isEmpty());
     }
 
     @Test
@@ -200,6 +207,15 @@ class EkkoTest {
         Files.writeString(file.getParent(), "blocked");
         assertThrows(IOException.class, app::mainLoop);
         assertFalse(output.toString(StandardCharsets.UTF_8).contains("Added to your agenda"));
+    }
+
+    @Test
+    void main_unreadableStorage_reportsActionableErrorWithoutStackTrace() throws Exception {
+        Files.createDirectories(directory.resolve("data/ekko.txt"));
+        String output = runMain(directory, "");
+        assertTrue(output.contains("Could not access the task file:"));
+        assertTrue(output.contains("Fix the file access problem and restart Ekko."));
+        assertEquals("", Files.readString(directory.resolve("stderr.txt")));
     }
 
     @Test

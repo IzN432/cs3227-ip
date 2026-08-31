@@ -24,7 +24,7 @@ class ParserTest {
 
     @Test
     void parse_whitespaceSeparator_trimsEdgesButPreservesInternalText() throws EkkoException {
-        Parser.ParsedCommand parsed = Parser.parse("event \t meeting  notes /from 1800 /to 1900  ");
+        Parser.ParsedCommand parsed = Parser.parse("  event \t meeting  notes /from 1800 /to 1900  ");
         assertEquals(Command.EVENT, parsed.command());
         assertEquals("meeting  notes /from 1800 /to 1900", parsed.arguments());
     }

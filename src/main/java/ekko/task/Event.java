@@ -18,11 +18,21 @@ public class Event extends Task {
      * @param description event description without a storage delimiter.
      * @param from start date and time.
      * @param to end date and time.
+     * @throws IllegalArgumentException if either endpoint is null or the end is not after the start.
      */
     public Event(String description, LocalDateTime from, LocalDateTime to) {
         super(description);
+        if (from == null || to == null || !to.isAfter(from)) {
+            throw new IllegalArgumentException("An event's /to date/time must be after its /from date/time.");
+        }
         this.from = from;
         this.to = to;
+    }
+
+    @Override
+    public boolean hasSameDetails(Task other) {
+        return super.hasSameDetails(other)
+                && from.equals(((Event) other).from) && to.equals(((Event) other).to);
     }
 
     @Override
