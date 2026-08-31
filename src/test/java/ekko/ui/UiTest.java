@@ -1,20 +1,30 @@
 package ekko.ui;
 
-import ekko.task.Todo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
-/** Tests raw console output, including chrome ignored by normalized UI tests. */
+import org.junit.jupiter.api.Test;
+
+import ekko.task.Todo;
+
+/**
+ * Tests raw console output, including chrome ignored by normalized UI tests.
+ */
 class UiTest {
     private final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    /** Supplies input without replacing the JVM's global streams. */
+    /**
+     * Supplies input without replacing the JVM's global streams.
+     */
     private Ui ui(String input) {
         return new Ui(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
                 new PrintStream(output, true, StandardCharsets.UTF_8));

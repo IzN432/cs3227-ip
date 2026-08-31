@@ -1,10 +1,16 @@
 package ekko.task;
 
-import java.time.LocalDate;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests inclusive event intervals and exact display/storage output. */
+import java.time.LocalDate;
+
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests inclusive event intervals and exact display/storage output.
+ */
 class EventTest {
     private final LocalDate start = LocalDate.of(2026, 9, 1);
 
@@ -37,7 +43,7 @@ class EventTest {
     }
 
     @Test
-    void toString_andSerialization_bothStates_preserveEndpoints() {
+    void toStringAndSerialization_bothStates_preserveEndpoints() {
         Event event = new Event("trip", start.atStartOfDay(), start.plusDays(1).atTime(18, 0));
         assertEquals("[E][ ] trip (from: Sep 01 2026 to: Sep 02 2026, 6:00 PM)", event.toString());
         assertEquals("E | 0 | trip | 2026-09-01T00:00 | 2026-09-02T18:00", event.toSerializedString());

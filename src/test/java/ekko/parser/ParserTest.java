@@ -1,11 +1,17 @@
 package ekko.parser;
 
-import ekko.EkkoException;
-import java.util.Locale;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Tests complete-command splitting, preserving argument content and errors. */
+import java.util.Locale;
+
+import org.junit.jupiter.api.Test;
+
+import ekko.EkkoException;
+
+/**
+ * Tests complete-command splitting, preserving argument content and errors.
+ */
 class ParserTest {
     @Test
     void parse_eachBareCommand_returnsEmptyArguments() throws EkkoException {

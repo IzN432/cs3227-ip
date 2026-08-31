@@ -1,8 +1,10 @@
 package ekko;
 
-import ekko.storage.Storage;
-import ekko.task.Task;
-import ekko.ui.Ui;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,11 +16,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
+
+import ekko.storage.Storage;
+import ekko.task.Task;
+import ekko.ui.Ui;
 
 /**
  * Tests the application loop directly and the real main entry point in child JVMs.
@@ -28,7 +34,9 @@ class EkkoTest {
     @TempDir
     Path directory;
 
-    /** Runs JUnit-owned command scenarios against the real application entry point. */
+    /**
+     * Runs JUnit-owned command scenarios against the real application entry point.
+     */
     @TestFactory
     Stream<DynamicTest> main_commandScenarios_matchExpectedOutput() {
         return CommandScenarios.all().stream().map(scenario ->
@@ -65,7 +73,7 @@ class EkkoTest {
         Path file = directory.resolve("tasks.txt");
         String output = runLoop(new Storage(file),
                 "\nunknown\nevent meeting /from bad /to 2026-09-01\n"
-                + "deadline book /by bad\nmark 2147483648\nbye\n");
+                        + "deadline book /by bad\nmark 2147483648\nbye\n");
         assertTrue(output.contains("Please enter a command."));
         assertTrue(output.contains("I don't recognise that command."));
         assertEquals(2, output.lines().filter(line -> line.equals(
@@ -132,11 +140,11 @@ class EkkoTest {
             Path file = working.resolve("data/ekko.txt");
             Files.createDirectories(file.getParent());
             Files.writeString(file, "invalid");
-            boolean affirmative = response.trim().equalsIgnoreCase("y")
+            boolean isAffirmative = response.trim().equalsIgnoreCase("y")
                     || response.trim().equalsIgnoreCase("yes");
             String input = response.isEmpty() ? "" : response + "\nbye\n";
             String output = runMain(working, input);
-            if (affirmative) {
+            if (isAffirmative) {
                 assertFalse(Files.exists(file));
                 assertTrue(output.contains("What can I do for you?"));
                 assertTrue(output.contains("Bye. Hope to see you again soon!"));
@@ -148,7 +156,9 @@ class EkkoTest {
         }
     }
 
-    /** Runs the public loop with caller-provided isolated dependencies. */
+    /**
+     * Runs the public loop with caller-provided isolated dependencies.
+     */
     private String runLoop(Storage storage, String input) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         new Ekko(ui(input, output), storage).mainLoop();
@@ -191,7 +201,9 @@ class EkkoTest {
         }
     }
 
-    /** Ignores only stable chrome, retaining recovery messages and task indentation. */
+    /**
+     * Ignores only stable chrome, retaining recovery messages and task indentation.
+     */
     private String normalize(String output) {
         String text = output.replace("\r\n", "\n");
         int greeting = text.indexOf("What can I do for you?");

@@ -1,9 +1,13 @@
 package ekko.parser;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Tests slash-argument name recognition independently of command parsing. */
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests slash-argument name recognition independently of command parsing.
+ */
 class ArgumentNameTest {
     @Test
     void fromText_supportedNames_returnsEnum() {

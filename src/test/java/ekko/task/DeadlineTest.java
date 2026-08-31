@@ -1,10 +1,16 @@
 package ekko.task;
 
-import java.time.LocalDate;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests deadline date matching and exact display/storage output. */
+import java.time.LocalDate;
+
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests deadline date matching and exact display/storage output.
+ */
 class DeadlineTest {
     private final LocalDate date = LocalDate.of(2026, 9, 1);
 
@@ -19,7 +25,7 @@ class DeadlineTest {
     }
 
     @Test
-    void toString_andSerialization_midnightAndTimedValues_useExpectedFormats() {
+    void toStringAndSerialization_midnightAndTimedValues_useExpectedFormats() {
         Deadline task = new Deadline("book", date.atStartOfDay());
         assertEquals("[D][ ] book (by: Sep 01 2026)", task.toString());
         assertEquals("D | 0 | book | 2026-09-01T00:00", task.toSerializedString());

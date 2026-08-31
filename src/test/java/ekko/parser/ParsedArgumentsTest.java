@@ -1,9 +1,14 @@
 package ekko.parser;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests absent-versus-empty values and replacement of named arguments. */
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests absent-versus-empty values and replacement of named arguments.
+ */
 class ParsedArgumentsTest {
     @Test
     void getArgument_missingName_returnsEmptyButNotPresent() {

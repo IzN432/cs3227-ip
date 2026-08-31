@@ -1,11 +1,11 @@
 package ekko.ui;
 
-import ekko.task.Task;
-
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Scanner;
+
+import ekko.task.Task;
 
 /**
  * Handles all console input and output for Ekko.
@@ -24,8 +24,8 @@ public class Ui {
     /**
      * Creates a UI with caller-owned streams, allowing in-memory streams in tests.
      *
-     * @param input stream containing user commands
-     * @param output destination for displayed messages
+     * @param input stream containing user commands.
+     * @param output destination for displayed messages.
      */
     public Ui(InputStream input, PrintStream output) {
         scanner = new Scanner(input);
@@ -35,7 +35,7 @@ public class Ui {
     /**
      * Reads the next command entered by the user.
      *
-     * @return the command without surrounding whitespace
+     * @return the command without surrounding whitespace.
      */
     public String readCommand() {
         String input = scanner.nextLine();
@@ -46,7 +46,7 @@ public class Ui {
     /**
      * Reads a response when input may have ended, such as during startup recovery.
      *
-     * @return the response, or an empty string when no line is available
+     * @return the response, or an empty string when no line is available.
      */
     public String readOptionalResponse() {
         return scanner.hasNextLine() ? scanner.nextLine().trim() : "";
@@ -55,7 +55,7 @@ public class Ui {
     /**
      * Displays the startup banner and greeting.
      *
-     * @param name application name shown in the greeting
+     * @param name application name shown in the greeting.
      */
     public void showWelcome(String name) {
         showSeparator();
@@ -73,7 +73,7 @@ public class Ui {
     /**
      * Displays a message followed by a blank line.
      *
-     * @param message message to display
+     * @param message message to display.
      */
     public void showMessage(String message) {
         output.println(message);
@@ -83,8 +83,8 @@ public class Ui {
     /**
      * Displays numbered tasks with the supplied heading.
      *
-     * @param heading text shown before the tasks
-     * @param tasks tasks to display
+     * @param heading text shown before the tasks.
+     * @param tasks tasks to display.
      */
     public void showTasks(String heading, List<Task> tasks) {
         output.println(heading);

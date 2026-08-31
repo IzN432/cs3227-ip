@@ -1,10 +1,16 @@
 package ekko.parser;
 
-import java.util.Set;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tests argument boundaries, ordering, empty values, and preservation of free text. */
+import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests argument boundaries, ordering, empty values, and preservation of free text.
+ */
 class ArgumentParserTest {
     @Test
     void parse_noAllowedArguments_keepsAllText() {

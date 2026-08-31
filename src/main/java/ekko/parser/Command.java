@@ -1,8 +1,8 @@
 package ekko.parser;
 
-import ekko.EkkoException;
-
 import java.util.Locale;
+
+import ekko.EkkoException;
 
 /**
  * Represents a command supported by Ekko.
@@ -21,9 +21,9 @@ public enum Command {
     /**
      * Converts a command word into its enum value.
      *
-     * @param commandWord command word entered by the user
-     * @return the matching command
-     * @throws EkkoException if the command word is not supported
+     * @param commandWord command word entered by the user.
+     * @return the matching command.
+     * @throws EkkoException if the command word is not supported.
      */
     public static Command from(String commandWord) throws EkkoException {
         for (Command command : values()) {

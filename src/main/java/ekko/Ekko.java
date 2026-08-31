@@ -1,5 +1,13 @@
 package ekko;
 
+import java.io.IOException;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Set;
+
 import ekko.datetime.DateTimeParser;
 import ekko.parser.ArgumentName;
 import ekko.parser.ArgumentParser;
@@ -14,19 +22,23 @@ import ekko.task.TaskList;
 import ekko.task.Todo;
 import ekko.ui.Ui;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Starts the Ekko chatbot application.
  */
 public class Ekko {
 
+    private final Ui ui;
+    private final Storage storage;
+    private final TaskList tasks;
+    /** Indicates whether loading or recovery permits the command loop to start. */
+    private final boolean canStart;
+
+    /**
+     * Starts the console application if its saved data can be loaded or recovered.
+     *
+     * @param args command-line arguments, which are not used.
+     * @throws IOException if loading, recovery, or saving fails.
+     */
     public static void main(String[] args) throws IOException {
         Ekko instance = new Ekko();
         if (instance.canStart) {
@@ -34,12 +46,9 @@ public class Ekko {
         }
     }
 
-    private final Ui ui;
-    private final Storage storage;
-    private final TaskList tasks;
-    private final boolean canStart;
-
-    /** Creates the application with console UI and default file storage. */
+    /**
+     * Creates the application with console UI and default file storage.
+     */
     public Ekko() throws IOException {
         this(new Ui(), new Storage());
     }
@@ -47,23 +56,23 @@ public class Ekko {
     /**
      * Loads the application using supplied UI and storage dependencies.
      *
-     * @param ui user interaction endpoint
-     * @param storage task persistence endpoint
-     * @throws IOException if loading or recovery fails
+     * @param ui user interaction endpoint.
+     * @param storage task persistence endpoint.
+     * @throws IOException if loading or recovery fails.
      */
     public Ekko(Ui ui, Storage storage) throws IOException {
         this.ui = ui;
         this.storage = storage;
         List<Task> loadedTasks;
-        boolean startupCanProceed = true;
+        boolean canProceedWithStartup = true;
         try {
             loadedTasks = storage.loadTasks();
         } catch (IllegalArgumentException | DateTimeException e) {
             loadedTasks = List.of();
-            startupCanProceed = handleInvalidDataFile();
+            canProceedWithStartup = handleInvalidDataFile();
         }
         tasks = new TaskList(loadedTasks);
-        canStart = startupCanProceed;
+        canStart = canProceedWithStartup;
     }
 
     /**
@@ -71,7 +80,7 @@ public class Ekko {
      * Deleting the file allows Ekko to start with an empty task list; keeping it
      * prevents startup so the invalid data is not silently ignored.
      *
-     * @return {@code true} if the invalid file was deleted and startup can proceed
+     * @return {@code true} if the invalid file was deleted and startup can proceed.
      */
     private boolean handleInvalidDataFile() throws IOException {
         ui.showMessage("The stored task data is invalid. Delete the data file? (y/n)");
@@ -114,7 +123,7 @@ public class Ekko {
     /**
      * Identifies a command and passes its remaining text to the appropriate handler.
      *
-     * @param input complete line entered by the user
+     * @param input complete line entered by the user.
      */
     private boolean handleInput(String input) throws IOException, EkkoException {
         Parser.ParsedCommand parsedCommand = Parser.parse(input);
@@ -122,21 +131,24 @@ public class Ekko {
         String arguments = parsedCommand.arguments();
 
         switch (command) {
-        case TODO -> addTodo(arguments);
-        case DEADLINE -> addDeadline(arguments);
-        case EVENT -> addEvent(arguments);
-        case AGENDA -> printAgenda(arguments);
-        case LIST -> printTasks();
-        case MARK -> markTask(arguments);
-        case UNMARK -> unmarkTask(arguments);
-        case DELETE -> deleteTask(arguments);
-        case BYE -> {
-            // The main loop displays the farewell message after this method returns.
-        }
+            case TODO -> addTodo(arguments);
+            case DEADLINE -> addDeadline(arguments);
+            case EVENT -> addEvent(arguments);
+            case AGENDA -> printAgenda(arguments);
+            case LIST -> printTasks();
+            case MARK -> markTask(arguments);
+            case UNMARK -> unmarkTask(arguments);
+            case DELETE -> deleteTask(arguments);
+            case BYE -> {
+                // The main loop displays the farewell message after this method returns.
+            }
         }
         return command == Command.BYE;
     }
 
+    /**
+     * Validates the todo description and adds the resulting task.
+     */
     private void addTodo(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
             throw new EkkoException("The description of a todo cannot be empty.");
@@ -144,6 +156,9 @@ public class Ekko {
         addTask(new Todo(arguments));
     }
 
+    /**
+     * Validates the description and required deadline before adding a task.
+     */
     private void addDeadline(String arguments) throws IOException, EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of(ArgumentName.BY));
         String by = parsed.getArgument(ArgumentName.BY);
@@ -157,6 +172,9 @@ public class Ekko {
         }
     }
 
+    /**
+     * Validates both event endpoints and rejects an end before the start.
+     */
     private void addEvent(String arguments) throws IOException, EkkoException {
         ParsedArguments parsed = ArgumentParser.parse(
                 arguments,
@@ -222,7 +240,7 @@ public class Ekko {
     /**
      * Stores the user's input and confirms that it was added.
      *
-     * @param task task to store
+     * @param task task to store.
      */
     private void addTask(Task task) throws IOException {
         tasks.add(task);
@@ -249,7 +267,7 @@ public class Ekko {
      * Marks the task identified by a mark command as complete.
      * Displays an error message when the command does not contain a valid task number.
      *
-     * @param arguments text following the {@code mark} command
+     * @param arguments text following the {@code mark} command.
      */
     private void markTask(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
@@ -257,7 +275,7 @@ public class Ekko {
         } else {
             try {
                 TaskList.TaskUpdate update = tasks.mark(Integer.parseInt(arguments));
-                if (!update.changed()) {
+                if (!update.hasChanged()) {
                     ui.showMessage("This task has already been marked as done:\n  " + update.task());
                 } else {
                     saveTasks();
@@ -273,7 +291,7 @@ public class Ekko {
      * Marks the task identified by an unmark command as incomplete.
      * Displays an error message when the command does not contain a valid task number.
      *
-     * @param arguments text following the {@code unmark} command
+     * @param arguments text following the {@code unmark} command.
      */
     private void unmarkTask(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {
@@ -281,7 +299,7 @@ public class Ekko {
         } else {
             try {
                 TaskList.TaskUpdate update = tasks.unmark(Integer.parseInt(arguments));
-                if (!update.changed()) {
+                if (!update.hasChanged()) {
                     ui.showMessage("This task has already been unmarked:\n  " + update.task());
                 } else {
                     saveTasks();
@@ -297,7 +315,7 @@ public class Ekko {
      * Deletes the task identified by a delete command.
      * Displays an error message when the command does not contain a valid task number.
      *
-     * @param arguments text following the {@code delete} command
+     * @param arguments text following the {@code delete} command.
      */
     private void deleteTask(String arguments) throws IOException, EkkoException {
         if (arguments.isBlank()) {

@@ -1,13 +1,22 @@
 package ekko.task;
 
-import ekko.EkkoException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
-/** Tests list ownership, one-based indexing, state transitions, and agenda queries. */
+import org.junit.jupiter.api.Test;
+
+import ekko.EkkoException;
+
+/**
+ * Tests list ownership, one-based indexing, state transitions, and agenda queries.
+ */
 class TaskListTest {
     @Test
     void constructor_andAsList_isolateListStructure() {
@@ -41,23 +50,23 @@ class TaskListTest {
     }
 
     @Test
-    void mark_andUnmark_repeatedOperations_reportWhetherStateChanged() throws EkkoException {
+    void markAndUnmark_repeatedOperations_reportWhetherStateChanged() throws EkkoException {
         Todo first = new Todo("first");
         Todo last = new Todo("last");
         TaskList tasks = new TaskList(List.of(first, last));
         TaskList.TaskUpdate unchanged = tasks.unmark(1);
         assertSame(first, unchanged.task());
-        assertFalse(unchanged.changed());
+        assertFalse(unchanged.hasChanged());
         TaskList.TaskUpdate marked = tasks.mark(2);
         assertSame(last, marked.task());
-        assertTrue(marked.changed());
+        assertTrue(marked.hasChanged());
         assertTrue(last.isMarked());
         assertFalse(first.isMarked());
-        assertFalse(tasks.mark(2).changed());
-        assertTrue(tasks.unmark(2).changed());
+        assertFalse(tasks.mark(2).hasChanged());
+        assertTrue(tasks.unmark(2).hasChanged());
         assertFalse(last.isMarked());
-        assertFalse(tasks.unmark(2).changed());
-        assertTrue(tasks.mark(1).changed());
+        assertFalse(tasks.unmark(2).hasChanged());
+        assertTrue(tasks.mark(1).hasChanged());
     }
 
     @Test

@@ -1,11 +1,17 @@
 package ekko.parser;
 
-import ekko.EkkoException;
-import java.util.Locale;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Tests exact command-word recognition and invalid-input rejection. */
+import java.util.Locale;
+
+import org.junit.jupiter.api.Test;
+
+import ekko.EkkoException;
+
+/**
+ * Tests exact command-word recognition and invalid-input rejection.
+ */
 class CommandTest {
     @Test
     void from_allCommands_returnsMatchingEnum() throws EkkoException {

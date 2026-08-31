@@ -1,10 +1,10 @@
 package ekko.task;
 
-import ekko.EkkoException;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import ekko.EkkoException;
 
 /**
  * Owns the application's task collection and its list operations.
@@ -15,12 +15,15 @@ public class TaskList {
     /**
      * Creates a task list containing the supplied tasks in their original order.
      *
-     * @param tasks initial tasks
+     * @param tasks initial tasks.
      */
     public TaskList(List<Task> tasks) {
         this.tasks = new ArrayList<>(tasks);
     }
 
+    /**
+     * Appends a task to the end of the displayed list.
+     */
     public void add(Task task) {
         tasks.add(task);
     }
@@ -37,9 +40,9 @@ public class TaskList {
      */
     public TaskUpdate mark(int taskNumber) throws EkkoException {
         Task task = get(taskNumber);
-        boolean changed = !task.isMarked();
+        boolean hasChanged = !task.isMarked();
         task.setMarked(true);
-        return new TaskUpdate(task, changed);
+        return new TaskUpdate(task, hasChanged);
     }
 
     /**
@@ -47,15 +50,21 @@ public class TaskList {
      */
     public TaskUpdate unmark(int taskNumber) throws EkkoException {
         Task task = get(taskNumber);
-        boolean changed = task.isMarked();
+        boolean hasChanged = task.isMarked();
         task.setMarked(false);
-        return new TaskUpdate(task, changed);
+        return new TaskUpdate(task, hasChanged);
     }
 
+    /**
+     * Returns whether the list contains no tasks.
+     */
     public boolean isEmpty() {
         return tasks.isEmpty();
     }
 
+    /**
+     * Returns the number of tasks in the list.
+     */
     public int size() {
         return tasks.size();
     }
@@ -78,6 +87,9 @@ public class TaskList {
         return tasks.get(toIndex(taskNumber));
     }
 
+    /**
+     * Converts a one-based display number to an index, rejecting numbers outside the list.
+     */
     private int toIndex(int taskNumber) throws EkkoException {
         int index = taskNumber - 1;
         if (index < 0 || index >= tasks.size()) {
@@ -91,9 +103,9 @@ public class TaskList {
     /**
      * Describes the task affected by a mark or unmark operation.
      *
-     * @param task affected task
-     * @param changed whether the operation changed its completion state
+     * @param task affected task.
+     * @param hasChanged whether the operation changed its completion state.
      */
-    public record TaskUpdate(Task task, boolean changed) {
+    public record TaskUpdate(Task task, boolean hasChanged) {
     }
 }

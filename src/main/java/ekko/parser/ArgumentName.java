@@ -1,7 +1,7 @@
 package ekko.parser;
 
 /**
- * Represents a slash-prefixed argument recognised by task commands.
+ * Represents a slash-prefixed argument recognized by task commands.
  */
 public enum ArgumentName {
     BY("by"),
@@ -21,9 +21,9 @@ public enum ArgumentName {
     /**
      * Finds the argument name represented by parsed command text.
      *
-     * @param text argument name without its leading slash
-     * @return the matching argument name
-     * @throws IllegalArgumentException if the text is not a recognised argument
+     * @param text argument name without its leading slash.
+     * @return the matching argument name.
+     * @throws IllegalArgumentException if the text is not a recognized argument.
      */
     public static ArgumentName fromText(String text) {
         for (ArgumentName argumentName : values()) {

@@ -7,15 +7,15 @@ import ekko.EkkoException;
  */
 public final class Parser {
     private Parser() {
-        // This class contains only static parsing behaviour.
+        // This class contains only static parsing behavior.
     }
 
     /**
      * Splits a line into its command word and remaining argument text.
      *
-     * @param input complete line entered by the user
-     * @return parsed command and arguments
-     * @throws EkkoException if the input is blank or names an unknown command
+     * @param input complete line entered by the user.
+     * @return parsed command and arguments.
+     * @throws EkkoException if the input is blank or names an unknown command.
      */
     public static ParsedCommand parse(String input) throws EkkoException {
         if (input.isBlank()) {
@@ -31,8 +31,8 @@ public final class Parser {
     /**
      * Holds the two meaningful parts of a parsed input line.
      *
-     * @param command recognised command
-     * @param arguments text following the command word
+     * @param command recognized command.
+     * @param arguments text following the command word.
      */
     public record ParsedCommand(Command command, String arguments) {
     }

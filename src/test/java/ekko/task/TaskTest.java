@@ -1,13 +1,19 @@
 package ekko.task;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
-/** Tests persisted task reconstruction and shared task behavior through concrete types. */
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests persisted task reconstruction and shared task behavior through concrete types.
+ */
 class TaskTest {
     @Test
     void constructor_pipeInDescription_rejectsEveryTaskType() {
@@ -27,11 +33,11 @@ class TaskTest {
         List<Task> tasks = List.of(new Todo("read book"), new Deadline("return book", date),
                 new Event("meeting", date, date.plusDays(1)));
         for (Task original : tasks) {
-            for (boolean marked : new boolean[] {false, true}) {
-                original.setMarked(marked);
+            for (boolean isMarked : new boolean[] {false, true}) {
+                original.setMarked(isMarked);
                 Task restored = Task.fromSerializedString(original.toSerializedString());
                 assertEquals(original.getClass(), restored.getClass());
-                assertEquals(marked, restored.isMarked());
+                assertEquals(isMarked, restored.isMarked());
                 assertEquals(original.toSerializedString(), restored.toSerializedString());
                 assertEquals(original.toString(), restored.toString());
             }

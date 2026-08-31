@@ -20,9 +20,9 @@ public final class ArgumentParser {
      * Slash-prefixed words that are not in {@code availableArguments} remain part
      * of the surrounding text.
      *
-     * @param argumentString all text following the command word
-     * @param availableArguments argument names recognised by the command
-     * @return the parsed description and argument values
+     * @param argumentString all text following the command word.
+     * @param availableArguments argument names recognized by the command.
+     * @return the parsed description and argument values.
      */
     public static ParsedArguments parse(String argumentString, Set<ArgumentName> availableArguments) {
         ParsedArguments parsedArguments = new ParsedArguments();
