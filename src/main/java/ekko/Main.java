@@ -84,7 +84,7 @@ public class Main extends Application {
      * Creates and displays the marketplace scene on the given stage for the authenticated user.
      */
     private void showMarketplaceScene(Stage stage, User user) {
-        VBox root = createContent();
+        VBox root = createContent(stage);
         Scene scene = new Scene(root, 720, 540);
         scene.getStylesheets().add(Main.class.getResource("/ekko/gui.css").toExternalForm());
         stage.setMinWidth(420);
@@ -263,7 +263,7 @@ public class Main extends Application {
     /**
      * Assembles the conversation controls in their displayed order.
      */
-    private VBox createContent() {
+    private VBox createContent(Stage stage) {
         identity = new Label("EKKO ONLINE");
         identity.setId("identityStatus");
         identity.getStyleClass().add("app-title");
@@ -274,10 +274,13 @@ public class Main extends Application {
         userLabel = new Label();
         userLabel.setId("userLabel");
         userLabel.getStyleClass().add("app-title");
+        Button logoutButton = new Button("Log out");
+        logoutButton.setId("logoutButton");
+        logoutButton.setOnAction(event -> logout(stage));
         balanceLabel = new Label();
         balanceLabel.setId("balanceLabel");
         balanceLabel.getStyleClass().add("app-title");
-        HBox userInfo = new HBox(8, balanceLabel, userLabel);
+        HBox userInfo = new HBox(8, balanceLabel, userLabel, logoutButton);
         userInfo.setAlignment(Pos.TOP_RIGHT);
         HBox heading = new HBox(headingText, userInfo);
         heading.setAlignment(Pos.TOP_LEFT);
@@ -490,6 +493,16 @@ public class Main extends Application {
      */
     private void updateBalanceLabel() {
         balanceLabel.setText(currentUser.getBalance() + " coins");
+    }
+
+    /**
+     * Ends the current session and returns to the login screen.
+     */
+    private void logout(Stage stage) {
+        stopSession();
+        marketplace = null;
+        currentUser = null;
+        showLoginScene(stage);
     }
 
     /**
