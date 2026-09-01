@@ -80,6 +80,7 @@ public class Marketplace {
             case BID -> placeBid(arguments);
             case BIN -> createBin(arguments);
             case BUY -> buyListing(arguments);
+            case FIND -> findListings(arguments);
             case LIST -> listListings();
             case MYLISTINGS -> myListings();
             case TOPUP -> topUp(arguments);
@@ -297,6 +298,51 @@ public class Marketplace {
             throw new AppException("Please provide a " + fieldName + ".");
         }
         return value.trim();
+    }
+
+    /**
+     * Searches active listings by keyword, with optional price range filtering.
+     *
+     * <p>Without {@code /low} or {@code /high} the search covers all prices.
+     * Either bound may be omitted independently; the missing bound defaults to
+     * 0 (for {@code /low}) or no upper limit (for {@code /high}).
+     *
+     * @param arguments raw argument text: {@code <keyword> [/low <min>] [/high <max>]}.
+     * @throws AppException if the keyword is missing, either price bound is invalid,
+     *         or the low bound exceeds the high bound.
+     */
+    private void findListings(String arguments) throws AppException {
+        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of(ArgumentName.LOW, ArgumentName.HIGH));
+        String keyword = requireField(parsed.getDescription(), "search keyword");
+
+        int low = 0;
+        int high = Integer.MAX_VALUE;
+        if (parsed.containsArgument(ArgumentName.LOW)) {
+            low = parsePositiveInt(parsed.getArgument(ArgumentName.LOW), "minimum price after /low");
+        }
+        if (parsed.containsArgument(ArgumentName.HIGH)) {
+            high = parsePositiveInt(parsed.getArgument(ArgumentName.HIGH), "maximum price after /high");
+        }
+        if (high < low) {
+            throw new AppException("Maximum price (" + high + ") cannot be less than minimum price (" + low + ").");
+        }
+
+        java.util.List<Listing> results;
+        try {
+            results = listingStore.search(keyword, low, high);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(e.getMessage());
+        }
+
+        if (results.isEmpty()) {
+            ui.showMessage("No listings found for \"" + keyword + "\".");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Results for \"" + keyword + "\" (" + results.size() + "):");
+        for (Listing listing : results) {
+            sb.append("\n\n").append(formatListing(listing, false));
+        }
+        ui.showMessage(sb.toString());
     }
 
     /**

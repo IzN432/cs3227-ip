@@ -383,6 +383,79 @@ class MarketplaceTest {
         return defaultListingStore;
     }
 
+    // --- find ---
+
+    @Test
+    void processCommand_find_matchingKeyword_showsResults() {
+        BinListing lamp = new BinListing("b001", "seller", "Vintage Lamp", "Great condition", 100);
+        BinListing table = new BinListing("b002", "seller", "Oak Table", "Solid wood", 200);
+        Marketplace mp = marketplaceWith(List.of(lamp, table));
+
+        mp.processCommand("find Lamp");
+
+        String output = messages.get(0);
+        assertTrue(output.contains("Vintage Lamp"), output);
+        assertFalse(output.contains("Oak Table"), output);
+    }
+
+    @Test
+    void processCommand_find_matchesDescription() {
+        BinListing listing = new BinListing("b001", "seller", "Chair", "Solid oak wood", 80);
+        Marketplace mp = marketplaceWith(List.of(listing));
+
+        mp.processCommand("find oak");
+
+        assertTrue(messages.get(0).contains("Chair"), messages.get(0));
+    }
+
+    @Test
+    void processCommand_find_noMatch_showsEmptyMessage() {
+        BinListing listing = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        Marketplace mp = marketplaceWith(List.of(listing));
+
+        mp.processCommand("find bicycle");
+
+        assertTrue(messages.get(0).contains("No listings found"), messages.get(0));
+    }
+
+    @Test
+    void processCommand_find_withPriceRange_filtersResults() {
+        BinListing cheap = new BinListing("b001", "seller", "Lamp", "desc", 50);
+        BinListing expensive = new BinListing("b002", "seller", "Lamp", "desc", 500);
+        Marketplace mp = marketplaceWith(List.of(cheap, expensive));
+
+        mp.processCommand("find Lamp /low 1 /high 100");
+
+        String output = messages.get(0);
+        assertTrue(output.contains("b001"), output);
+        assertFalse(output.contains("b002"), output);
+    }
+
+    @Test
+    void processCommand_find_lowOnlyBound_excludesCheaper() {
+        BinListing cheap = new BinListing("b001", "seller", "Lamp", "desc", 50);
+        BinListing expensive = new BinListing("b002", "seller", "Lamp", "desc", 500);
+        Marketplace mp = marketplaceWith(List.of(cheap, expensive));
+
+        mp.processCommand("find Lamp /low 100");
+
+        assertFalse(messages.get(0).contains("b001"), messages.get(0));
+        assertTrue(messages.get(0).contains("b002"), messages.get(0));
+    }
+
+    @Test
+    void processCommand_find_invertedPriceRange_showsError() {
+        Marketplace mp = marketplaceWith(List.of());
+        mp.processCommand("find Lamp /low 200 /high 100");
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    void processCommand_find_missingKeyword_showsError() {
+        marketplace.processCommand("find");
+        assertFalse(errors.isEmpty());
+    }
+
     // --- buy ---
 
     @Test
@@ -667,7 +740,7 @@ class MarketplaceTest {
 
     @Test
     void processCommand_unimplementedCommand_showsErrorAndReturnsFalse() {
-        assertFalse(marketplace.processCommand("find keyword"));
+        assertFalse(marketplace.processCommand("bid missingauction /price 50"));
         assertFalse(errors.isEmpty());
     }
 }
