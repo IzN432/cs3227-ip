@@ -1,5 +1,7 @@
 # Ekko
 
+[Open the Ekko project website](https://izn432.github.io/CS3227-2610-MP1/)
+
 Ekko is a Java desktop marketplace where users buy and sell items with coins through a chatbot-style
 interface. It was developed as an individual project for CS3227 MP1.
 
