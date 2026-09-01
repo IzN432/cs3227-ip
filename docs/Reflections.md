@@ -7,60 +7,60 @@ the chatbot.
 
 # 1. Ensuring the agent has the full context before proceeding
 
-1. "okay sure let's do that. I'm thinking a shopping interface where you can
-  log on as different users and perform either listing things to sell or buying
-   things."
+1. > okay sure let's do that. I'm thinking a shopping interface where you can
+   > log on as different users and perform either listing things to sell or buying
+   > things.
 
-  2. "simple username, all stored in a data file similar to the existing one.
-  the login wont be done via command, it will be done via button press. the app
-   loads into a login screen and only once you are logged in will you see the
-  command interface. on top of all this, users have money in their accounts,
-  and buyer can do topup number to add money and sellers can do withdraw number
-   to withdraw (all it does is add / remove money) cant go below 0 obviously.
-  and all sellers are buyers but not all buyers are sellers. in order to become
-   a seller, the buyer has to apply for seller status with a function like
-  applytobecomeseller (we need to workshop that name). It should be
-  automatically approved immediately. this time, the conversation history for
-  each user is stored in the data files (we can have a file per user)"
+2. > simple username, all stored in a data file similar to the existing one.
+   > the login wont be done via command, it will be done via button press. the app
+   > loads into a login screen and only once you are logged in will you see the
+   > command interface. on top of all this, users have money in their accounts,
+   > and buyer can do topup number to add money and sellers can do withdraw number
+   > to withdraw (all it does is add / remove money) cant go below 0 obviously.
+   > and all sellers are buyers but not all buyers are sellers. in order to become
+   > a seller, the buyer has to apply for seller status with a function like
+   > applytobecomeseller (we need to workshop that name). It should be
+   > automatically approved immediately. this time, the conversation history for
+   > each user is stored in the data files (we can have a file per user)
 
-  3. "there are two different sell types, BIN and AUCTION (I got these names
-  from hypixel skyblock but im not sure if BIN means anything in the real
-  world), so the commands can be bin <item name> /desc <item description>
-  /price <price> and auction <item name> /desc <item description> /price
-  <starting price> /end <date time> note that the time is mandatory. so once
-  the time passes, or if the application is launched with the time already
-  passed, the auction entry is processed to be finished, and the top bid goes
-  to the seller and everyone else gets refunded their money except the top
-  bidder. the command would be bid <uuid> /price <price>. Another thing to note
-   is we will use a short UUID instead of the exact list number because I think
-   it will look cooler. For bin, it is just direct purchase so it..."
+3. > there are two different sell types, BIN and AUCTION (I got these names
+   > from hypixel skyblock but im not sure if BIN means anything in the real
+   > world), so the commands can be bin \<item name\> /desc \<item description\>
+   > /price \<price\> and auction \<item name\> /desc \<item description\> /price
+   > \<starting price\> /end \<date time\> note that the time is mandatory. so once
+   > the time passes, or if the application is launched with the time already
+   > passed, the auction entry is processed to be finished, and the top bid goes
+   > to the seller and everyone else gets refunded their money except the top
+   > bidder. the command would be bid \<uuid\> /price \<price\>. Another thing to note
+   > is we will use a short UUID instead of the exact list number because I think
+   > it will look cooler. For bin, it is just direct purchase so it...
 
-  4. "the problem im facing right now is we cant reliably implement
-  notifications when the application is not guaranteed to be running at all
-  times and we dont have a central server so I can't think of any reasonable
-  way to inform the winner that they have won... or perhaps on startup, the app
-   combs through all auctions, checks if they are done, if they are done, it
-  appends to the user's chat history the information of the thing. If not, it
-  polls every second while the app is running for the same thing? then I guess
-  that is the auction expiry process. help me to think about the bid holding
-  thing. we deal with whole numbers only, the minimum bid increment can just be
-   1. mylistings can show both and we can have more parameters to deal with
-  whether to show active or not. uuid format can be 4 hex..."
+4. > the problem im facing right now is we cant reliably implement
+   > notifications when the application is not guaranteed to be running at all
+   > times and we dont have a central server so I can't think of any reasonable
+   > way to inform the winner that they have won... or perhaps on startup, the app
+   > combs through all auctions, checks if they are done, if they are done, it
+   > appends to the user's chat history the information of the thing. If not, it
+   > polls every second while the app is running for the same thing? then I guess
+   > that is the auction expiry process. help me to think about the bid holding
+   > thing. we deal with whole numbers only, the minimum bid increment can just be
+   > 1. mylistings can show both and we can have more parameters to deal with
+   > whether to show active or not. uuid format can be 4 hex...
 
-  5. "just dont let people outbid themselves and we dont even have to think
-  about that yeah. mylistings parameters looks good if it fits our code.
-  auction display definitely has to display the top bid, end date time, number
-  of bidders yeah. a non seller should see an error message suggesting
-  becomeseller yes. username rules are just alphabet capital and lowercase"
+5. > just dont let people outbid themselves and we dont even have to think
+   > about that yeah. mylistings parameters looks good if it fits our code.
+   > auction display definitely has to display the top bid, end date time, number
+   > of bidders yeah. a non seller should see an error message suggesting
+   > becomeseller yes. username rules are just alphabet capital and lowercase
 
-  6. "add a new folder in ekko, call it listing. Listing should have item name
-  and item description, both taken in on construction, and a state enum that
-  goes between ACTIVE, SOLD, UNACTIVE. it should be inherited by Bin and
-  Auction. Bin should have a price. Auction should have a base price and a
-  highest Bid object. Bid should be another class that contains a User and a
-  bidding price... While we are at it, add a users/ folder in ekko/ and it just
-   contains the User class that should have a username, hashed password,
-  isSeller status."
+6. > add a new folder in ekko, call it listing. Listing should have item name
+   > and item description, both taken in on construction, and a state enum that
+   > goes between ACTIVE, SOLD, UNACTIVE. it should be inherited by Bin and
+   > Auction. Bin should have a price. Auction should have a base price and a
+   > highest Bid object. Bid should be another class that contains a User and a
+   > bidding price... While we are at it, add a users/ folder in ekko/ and it just
+   > contains the User class that should have a username, hashed password,
+   > isSeller status.
 
 When I realised I read the specification wrong and had to pivot the project from the CS2103T ip to a new idea, I wanted to leave it mostly to the agent to perform the
 pivot. So, I came up with the idea for the pivot, which was to move over to a marketplace app, then I discussed the functionalities with the agent.
@@ -74,6 +74,14 @@ The conversation was also useful for refining ideas that were initially incomple
 This experience showed me that effective use of an agent involves more than issuing isolated implementation instructions. The agent produces more coherent results when it is given the project’s goals, constraints, domain rules, and expected user experience upfront. Once that shared understanding was established, I could break the pivot into smaller implementation tasks such as creating the Listing, Bin, Auction, Bid, and User classes, while remaining confident that these components were being developed as parts of the same overall system rather than as disconnected features.
 
 # 2. Initial suggestions can constrain the agent's thinking
+
+The two exact prompts that led to this design correction were:
+
+> it is okay to just store one file per user that is just titled their name for the conversations
+
+followed shortly afterward by:
+
+> or actually that is a great reason to implement uuids on the users, to name the conversation file
 
 One of my initial requirements was that the application should have a "simple username,
 all stored in a data file similar to the existing one" and that "the conversation history
@@ -118,6 +126,22 @@ have risked tying usernames to the file system, mishandling special characters, 
 the entire application because one user's conversation file was damaged.
 
 # 3. Formatting matters
+
+After seeing the malformed result, my exact response was:
+
+> i feel like my o was taller than that
+
+The agent asked me to resend the character-sensitive input in a fenced code block, so my
+next prompt was:
+
+```text
+ _______  __  ___  __  ___   ______
+|   ____||  |/  / |  |/  /  /  __  \
+|  |__   |  '  /  |  '  /  |  |  |  |
+|   __|  |    <   |    <   |  |  |  |
+|  |____ |  .  \  |  .  \  |  `--'  |
+|_______||__|\__\ |__|\__\  \______/
+```
 
 One of the first things we did in this project was update the chatbot's name from Duke.
 In doing so, we were also required to update the ASCII art from that of Duke to that of
