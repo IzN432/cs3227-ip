@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ekko.listing.AuctionListing;
+import ekko.listing.Bid;
 import ekko.listing.BinListing;
 import ekko.listing.Listing;
 import ekko.listing.ListingState;
@@ -372,6 +373,256 @@ class MarketplaceTest {
     /** Returns the ListingStore used by the default marketplace instance. */
     private ListingStore listingStore() {
         return defaultListingStore;
+    }
+
+    // --- buy ---
+
+    @Test
+    void processCommand_buy_purchasesListingTransfersFundsAndMarksSold() {
+        BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        User buyer = new User("user", "password");
+        buyer.addBalance(200);
+        User seller = new User("seller", "hash");
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer, seller)),
+                new ListingStore(List.of(bin)));
+
+        mp.processCommand("buy b001");
+
+        assertEquals(100, buyer.getBalance());
+        assertEquals(100, seller.getBalance());
+        assertEquals(ListingState.SOLD, bin.getState());
+        assertEquals("user", bin.getBuyerUsername());
+        assertTrue(messages.get(0).contains("Lamp"), messages.get(0));
+        assertTrue(messages.get(0).contains("100 coins"), messages.get(0));
+    }
+
+    @Test
+    void processCommand_buy_insufficientFunds_showsErrorAndLeavesListingActive() {
+        BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        User buyer = new User("user", "password");
+        buyer.addBalance(50);
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer)),
+                new ListingStore(List.of(bin)));
+
+        mp.processCommand("buy b001");
+
+        assertTrue(errors.get(0).contains("Insufficient"), errors.get(0));
+        assertEquals(50, buyer.getBalance());
+        assertTrue(bin.isActive());
+    }
+
+    @Test
+    void processCommand_buy_ownListing_showsError() {
+        BinListing bin = new BinListing("b001", "user", "Lamp", "desc", 100);
+        User buyer = new User("user", "password");
+        buyer.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer)),
+                new ListingStore(List.of(bin)));
+
+        mp.processCommand("buy b001");
+
+        assertTrue(errors.get(0).contains("own listing"), errors.get(0));
+        assertTrue(bin.isActive());
+    }
+
+    @Test
+    void processCommand_buy_alreadySoldListing_showsError() {
+        BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        bin.setState(ListingState.SOLD);
+        User buyer = new User("user", "password");
+        buyer.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer)),
+                new ListingStore(List.of(bin)));
+
+        mp.processCommand("buy b001");
+
+        assertFalse(errors.isEmpty());
+        assertEquals(200, buyer.getBalance());
+    }
+
+    @Test
+    void processCommand_buy_onAuctionListing_showsError() {
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().plusHours(1));
+        User buyer = new User("user", "password");
+        buyer.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("buy a001");
+
+        assertTrue(errors.get(0).contains("bid"), errors.get(0));
+    }
+
+    @Test
+    void processCommand_buy_unknownUuid_showsError() {
+        User buyer = new User("user", "password");
+        buyer.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer)),
+                new ListingStore(List.of()));
+
+        mp.processCommand("buy xxxx");
+
+        assertTrue(errors.get(0).contains("No listing found"), errors.get(0));
+    }
+
+    // --- bid ---
+
+    @Test
+    void processCommand_bid_placesFirstBidAndDeductsFunds() {
+        LocalDateTime future = LocalDateTime.now().plusHours(1);
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 50");
+
+        assertEquals(150, bidder.getBalance());
+        assertEquals("user", auction.getHighestBid().getBidderUsername());
+        assertTrue(messages.get(0).contains("50 coins"), messages.get(0));
+    }
+
+    @Test
+    void processCommand_bid_outbidsPreviousBidderAndRefundsThem() {
+        LocalDateTime future = LocalDateTime.now().plusHours(1);
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
+        auction.setHighestBid(new Bid("other", 60));
+
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        User other = new User("other", "hash");
+        other.setBalance(0); // funds already deducted when they bid
+
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder, other)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 61");
+
+        assertEquals(139, bidder.getBalance());
+        assertEquals(60, other.getBalance()); // refunded
+        assertEquals("user", auction.getHighestBid().getBidderUsername());
+    }
+
+    @Test
+    void processCommand_bid_amountBelowMinimum_showsError() {
+        LocalDateTime future = LocalDateTime.now().plusHours(1);
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 49");
+
+        assertFalse(errors.isEmpty());
+        assertTrue(errors.get(0).contains("50 coins"), errors.get(0));
+        assertEquals(200, bidder.getBalance());
+        assertFalse(auction.hasBids());
+    }
+
+    @Test
+    void processCommand_bid_insufficientFunds_showsError() {
+        LocalDateTime future = LocalDateTime.now().plusHours(1);
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
+        User bidder = new User("user", "password");
+        bidder.addBalance(30);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 50");
+
+        assertTrue(errors.get(0).contains("Insufficient"), errors.get(0));
+        assertEquals(30, bidder.getBalance());
+        assertFalse(auction.hasBids());
+    }
+
+    @Test
+    void processCommand_bid_alreadyHighestBidder_showsError() {
+        LocalDateTime future = LocalDateTime.now().plusHours(1);
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
+        auction.setHighestBid(new Bid("user", 60));
+
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 70");
+
+        assertFalse(errors.isEmpty());
+        assertTrue(errors.get(0).contains("already hold"), errors.get(0));
+    }
+
+    @Test
+    void processCommand_bid_expiredAuction_showsError() {
+        AuctionListing expired = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().minusHours(1));
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(expired)));
+
+        mp.processCommand("bid a001 /price 50");
+
+        assertFalse(errors.isEmpty());
+        assertTrue(errors.get(0).contains("ended"), errors.get(0));
+        assertEquals(200, bidder.getBalance());
+    }
+
+    @Test
+    void processCommand_bid_onBinListing_showsError() {
+        BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(bin)));
+
+        mp.processCommand("bid b001 /price 100");
+
+        assertTrue(errors.get(0).contains("not an auction"), errors.get(0));
+    }
+
+    @Test
+    void processCommand_bid_unknownUuid_showsError() {
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of()));
+
+        mp.processCommand("bid xxxx /price 50");
+
+        assertTrue(errors.get(0).contains("No listing found"), errors.get(0));
+    }
+
+    @Test
+    void processCommand_bid_missingPrice_showsError() {
+        LocalDateTime future = LocalDateTime.now().plusHours(1);
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001");
+
+        assertTrue(errors.get(0).contains("/price"), errors.get(0));
     }
 
     // --- becomeseller ---

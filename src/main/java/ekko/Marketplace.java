@@ -7,8 +7,10 @@ import java.util.Set;
 
 import ekko.datetime.DateTimeParser;
 import ekko.listing.AuctionListing;
+import ekko.listing.Bid;
 import ekko.listing.BinListing;
 import ekko.listing.Listing;
+import ekko.listing.ListingState;
 import ekko.listing.ListingStore;
 import ekko.parser.ArgumentName;
 import ekko.parser.ArgumentParser;
@@ -75,7 +77,9 @@ public class Marketplace {
             case AUCTION -> createAuction(arguments);
             case BALANCE -> showBalance();
             case BECOMESELLER -> becomeSeller();
+            case BID -> placeBid(arguments);
             case BIN -> createBin(arguments);
+            case BUY -> buyListing(arguments);
             case LIST -> listListings();
             case MYLISTINGS -> myListings();
             case TOPUP -> topUp(arguments);
@@ -86,6 +90,101 @@ public class Marketplace {
             default -> throw new AppException("This command is not yet implemented.");
         }
         return false;
+    }
+
+    /**
+     * Purchases an active BIN listing immediately at its fixed price.
+     *
+     * @param arguments raw argument text containing the listing UUID.
+     * @throws AppException if the UUID is missing or unknown, the listing is not an active BIN,
+     *         the buyer owns the listing, or funds are insufficient.
+     */
+    private void buyListing(String arguments) throws AppException {
+        String uuid = requireField(arguments, "listing UUID");
+        Listing listing = listingStore.get(uuid);
+        if (listing == null) {
+            throw new AppException("No listing found with UUID [" + uuid + "].");
+        }
+        if (!(listing instanceof BinListing bin)) {
+            throw new AppException("Listing [" + uuid + "] is not a BIN listing. Use 'bid' for auctions.");
+        }
+        if (!bin.isActive()) {
+            throw new AppException("Listing [" + uuid + "] is no longer available.");
+        }
+        if (bin.getOwnerUsername().equals(currentUser.getUsername())) {
+            throw new AppException("You cannot buy your own listing.");
+        }
+        int price = bin.getPrice();
+        if (!currentUser.deductBalance(price)) {
+            throw new AppException("Insufficient balance. You have " + currentUser.getBalance()
+                    + " coins, but this listing costs " + price + " coins.");
+        }
+        User seller = userStore.get(bin.getOwnerUsername());
+        if (seller != null) {
+            seller.addBalance(price);
+        }
+        bin.setState(ListingState.SOLD);
+        bin.setBuyerUsername(currentUser.getUsername());
+        ui.showMessage("Purchased [" + uuid + "]: " + bin.getName() + " for " + price
+                + " coins. Balance: " + currentUser.getBalance() + " coins.");
+    }
+
+    /**
+     * Places a bid on an active auction on behalf of the current user.
+     *
+     * <p>The bid amount is deducted immediately. If the bidder is subsequently
+     * outbid, their funds are refunded at that point.
+     *
+     * @param arguments raw argument text: {@code <uuid> /price <amount>}.
+     * @throws AppException if the UUID is missing or unknown, the listing is not an active auction,
+     *         the auction has expired, the bidder already holds the highest bid,
+     *         the amount does not exceed the current highest bid, or funds are insufficient.
+     */
+    private void placeBid(String arguments) throws AppException {
+        ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of(ArgumentName.PRICE));
+        String uuid = requireField(parsed.getDescription(), "listing UUID");
+        if (!parsed.containsArgument(ArgumentName.PRICE)) {
+            throw new AppException("Please provide a bid amount: bid <uuid> /price <amount>");
+        }
+        int amount = parsePositiveInt(parsed.getArgument(ArgumentName.PRICE), "bid amount after /price");
+
+        Listing listing = listingStore.get(uuid);
+        if (listing == null) {
+            throw new AppException("No listing found with UUID [" + uuid + "].");
+        }
+        if (!(listing instanceof AuctionListing auction)) {
+            throw new AppException("Listing [" + uuid + "] is not an auction.");
+        }
+        if (!auction.isActive()) {
+            throw new AppException("Auction [" + uuid + "] is no longer active.");
+        }
+        if (auction.isExpired()) {
+            throw new AppException("Auction [" + uuid + "] has already ended.");
+        }
+        if (auction.hasBids() && auction.getHighestBid().getBidderUsername().equals(currentUser.getUsername())) {
+            throw new AppException("You already hold the highest bid on [" + uuid + "].");
+        }
+        int minimumBid = auction.hasBids() ? auction.getListingPrice() + 1 : auction.getBasePrice();
+        if (amount < minimumBid) {
+            throw new AppException("Your bid must be at least " + minimumBid + " coins"
+                    + (auction.hasBids() ? " to beat the current highest bid." : " (the starting bid)."));
+        }
+        if (!currentUser.deductBalance(amount)) {
+            throw new AppException("Insufficient balance. You have " + currentUser.getBalance() + " coins.");
+        }
+
+        // Refund the previous highest bidder before replacing the bid.
+        if (auction.hasBids()) {
+            Bid previous = auction.getHighestBid();
+            User previousBidder = userStore.get(previous.getBidderUsername());
+            if (previousBidder != null) {
+                previousBidder.addBalance(previous.getAmount());
+            }
+        }
+
+        auction.setHighestBid(new Bid(currentUser.getUsername(), amount));
+        ui.showMessage("Bid placed on [" + uuid + "]: " + auction.getName()
+                + " — " + amount + " coins. Balance: " + currentUser.getBalance() + " coins.");
     }
 
     /**

@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -14,6 +15,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -267,6 +271,9 @@ public class Main extends Application {
         }
         messageBox.maxWidthProperty().bind(conversation.widthProperty().subtract(12)
                 .multiply(isUser ? 0.85 : 1.0));
+        messageBox.setCursor(Cursor.HAND);
+        Tooltip.install(messageBox, new Tooltip("Click to copy"));
+        messageBox.setOnMouseClicked(event -> copyToClipboard(message));
         HBox row = new HBox(messageBox);
         row.setAlignment(isUser ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
         HBox.setHgrow(messageBox, Priority.ALWAYS);
@@ -276,6 +283,20 @@ public class Main extends Application {
             conversationScroll.layout();
             conversationScroll.setVvalue(1);
         });
+    }
+
+    /**
+     * Copies the given text to the system clipboard and briefly shows a confirmation.
+     */
+    private void copyToClipboard(String text) {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(text);
+        Clipboard.getSystemClipboard().setContent(content);
+        String previous = status.getText();
+        status.setText("COPIED TO CLIPBOARD");
+        PauseTransition flash = new PauseTransition(Duration.millis(1200));
+        flash.setOnFinished(e -> status.setText(previous));
+        flash.play();
     }
 
     /**
