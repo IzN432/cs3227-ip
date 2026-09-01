@@ -516,6 +516,25 @@ class MarketplaceTest {
     }
 
     @Test
+    void processCommand_buy_notifiesSellerOfSale() {
+        BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        User buyer = new User("user", "password");
+        buyer.addBalance(200);
+        User seller = new User("seller", "password");
+        List<String> notifications = new ArrayList<>();
+        Marketplace mp = new Marketplace(captureUi(), buyer,
+                new UserStore(List.of(buyer, seller)),
+                new ListingStore(List.of(bin)),
+                (username, message) -> notifications.add(username + ": " + message));
+
+        mp.processCommand("buy b001");
+
+        assertEquals(1, notifications.size());
+        assertTrue(notifications.get(0).startsWith("seller: Your BIN listing"));
+        assertTrue(notifications.get(0).contains("purchased by user for 100 coins"));
+    }
+
+    @Test
     void processCommand_buy_insufficientFunds_showsErrorAndLeavesListingActive() {
         BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
         User buyer = new User("user", "password");
@@ -590,6 +609,74 @@ class MarketplaceTest {
         assertTrue(errors.get(0).contains("No listing found"), errors.get(0));
     }
 
+    // --- delete ---
+
+    @Test
+    void processCommand_delete_ownActiveBinRemovesListing() {
+        BinListing bin = new BinListing("b001", "user", "Book", "desc", 20);
+        ListingStore listingStore = new ListingStore(List.of(bin));
+        Marketplace mp = new Marketplace(captureUi(), user,
+                new UserStore(List.of(user)), listingStore);
+
+        mp.processCommand("delete b001");
+
+        assertFalse(listingStore.contains("b001"));
+        assertTrue(messages.get(0).contains("Deleted listing [b001]"), messages.get(0));
+    }
+
+    @Test
+    void processCommand_delete_anotherSellersListingShowsError() {
+        BinListing bin = new BinListing("b001", "seller", "Book", "desc", 20);
+        ListingStore listingStore = new ListingStore(List.of(bin));
+        Marketplace mp = new Marketplace(captureUi(), user,
+                new UserStore(List.of(user)), listingStore);
+
+        mp.processCommand("delete b001");
+
+        assertTrue(listingStore.contains("b001"));
+        assertTrue(errors.get(0).contains("only delete your own"), errors.get(0));
+    }
+
+    @Test
+    void processCommand_delete_auctionWithBidRefundsAndNotifiesHighestBidder() {
+        AuctionListing auction = new AuctionListing("a001", "user", "Watch", "desc", 50,
+                LocalDateTime.now().plusHours(1));
+        auction.setHighestBid(new Bid("bidder", 75));
+        User bidder = new User("bidder", "password");
+        bidder.setBalance(0);
+        ListingStore listingStore = new ListingStore(List.of(auction));
+        List<String> notifications = new ArrayList<>();
+        Marketplace mp = new Marketplace(captureUi(), user,
+                new UserStore(List.of(user, bidder)), listingStore,
+                (username, message) -> notifications.add(username + ": " + message));
+
+        mp.processCommand("delete a001");
+
+        assertFalse(listingStore.contains("a001"));
+        assertEquals(75, bidder.getBalance());
+        assertEquals(1, notifications.size());
+        assertTrue(notifications.get(0).startsWith("bidder: The auction"));
+        assertTrue(notifications.get(0).contains("75 coins has been refunded"));
+    }
+
+    @Test
+    void processCommand_delete_expiredAuctionShowsErrorWithoutRefunding() {
+        AuctionListing auction = new AuctionListing("a001", "user", "Watch", "desc", 50,
+                LocalDateTime.now().minusHours(1));
+        auction.setHighestBid(new Bid("bidder", 75));
+        User bidder = new User("bidder", "password");
+        bidder.setBalance(0);
+        ListingStore listingStore = new ListingStore(List.of(auction));
+        Marketplace mp = new Marketplace(captureUi(), user,
+                new UserStore(List.of(user, bidder)), listingStore);
+
+        mp.processCommand("delete a001");
+
+        assertTrue(listingStore.contains("a001"));
+        assertEquals(0, bidder.getBalance());
+        assertTrue(errors.get(0).contains("already ended"), errors.get(0));
+    }
+
     // --- bid ---
 
     @Test
@@ -629,6 +716,28 @@ class MarketplaceTest {
         assertEquals(139, bidder.getBalance());
         assertEquals(60, other.getBalance()); // refunded
         assertEquals("user", auction.getHighestBid().getBidderUsername());
+    }
+
+    @Test
+    void processCommand_bid_outbidsPreviousBidderNotifiesThem() {
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().plusHours(1));
+        auction.setHighestBid(new Bid("other", 60));
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        User other = new User("other", "password");
+        other.setBalance(0);
+        List<String> notifications = new ArrayList<>();
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder, other)),
+                new ListingStore(List.of(auction)),
+                (username, message) -> notifications.add(username + ": " + message));
+
+        mp.processCommand("bid a001 /price 61");
+
+        assertEquals(1, notifications.size());
+        assertTrue(notifications.get(0).startsWith("other: You were outbid"));
+        assertTrue(notifications.get(0).contains("60 coins has been refunded"));
     }
 
     @Test

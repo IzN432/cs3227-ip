@@ -53,6 +53,15 @@ public class ListingStore {
     }
 
     /**
+     * Removes the listing with the given UUID if it exists.
+     *
+     * @param uuid UUID of the listing to remove.
+     */
+    public void remove(String uuid) {
+        listings.remove(uuid);
+    }
+
+    /**
      * Returns whether a UUID is already in use by any listing, including inactive ones.
      *
      * @param uuid UUID to check.

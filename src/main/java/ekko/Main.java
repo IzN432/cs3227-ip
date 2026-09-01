@@ -445,7 +445,7 @@ public class Main extends Application {
         }
         GuiUi ui = new GuiUi(message -> appendConversationMessage("Ekko", message),
                 message -> appendConversationMessage("Error", message), () -> "yes");
-        marketplace = new Marketplace(ui, currentUser, userStore, listingStore);
+        marketplace = new Marketplace(ui, currentUser, userStore, listingStore, this::recordNotification);
         userLabel.setText(currentUser.getUsername());
         updateBalanceLabel();
         ui.showWelcome("Ekko");
@@ -680,6 +680,25 @@ public class Main extends Application {
             if (currentUser != null) {
                 appendMessage("Error", "Could not save auction notifications: " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Records and persists a notification produced by a marketplace command.
+     */
+    private void recordNotification(String username, String message) {
+        User user = userStore.get(username);
+        if (user == null) {
+            return;
+        }
+        conversationStore.append(user.getUuid(), "Ekko", message);
+        if (currentUser != null && currentUser.getUuid().equals(user.getUuid())) {
+            appendMessage("Ekko", message);
+        }
+        try {
+            saveConversation(user);
+        } catch (IOException e) {
+            appendMessage("Error", "Could not save notification: " + e.getMessage());
         }
     }
 

@@ -68,6 +68,21 @@ class ListingStoreTest {
         assertTrue(store.contains("b001"));
     }
 
+    @Test
+    void remove_existingListingRemovesIt() {
+        store.remove("b001");
+
+        assertFalse(store.contains("b001"));
+        assertEquals(2, store.size());
+    }
+
+    @Test
+    void remove_unknownListingLeavesStoreUnchanged() {
+        store.remove("xxxx");
+
+        assertEquals(3, store.size());
+    }
+
     // --- getActive ---
 
     @Test

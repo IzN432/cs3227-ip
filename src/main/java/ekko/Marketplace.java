@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import ekko.datetime.DateTimeParser;
 import ekko.listing.AuctionListing;
@@ -34,6 +35,7 @@ public class Marketplace {
     private final User currentUser;
     private final UserStore userStore;
     private final ListingStore listingStore;
+    private final BiConsumer<String, String> notificationHandler;
 
     /**
      * Creates a marketplace session for the given logged-in user.
@@ -44,10 +46,25 @@ public class Marketplace {
      * @param listingStore all marketplace listings.
      */
     public Marketplace(Ui ui, User currentUser, UserStore userStore, ListingStore listingStore) {
+        this(ui, currentUser, userStore, listingStore, (username, message) -> { });
+    }
+
+    /**
+     * Creates a marketplace session that can notify users affected by marketplace commands.
+     *
+     * @param ui user interaction endpoint.
+     * @param currentUser the authenticated user for this session.
+     * @param userStore all registered users.
+     * @param listingStore all marketplace listings.
+     * @param notificationHandler receiver for a username and its notification message.
+     */
+    public Marketplace(Ui ui, User currentUser, UserStore userStore, ListingStore listingStore,
+            BiConsumer<String, String> notificationHandler) {
         this.ui = ui;
         this.currentUser = currentUser;
         this.userStore = userStore;
         this.listingStore = listingStore;
+        this.notificationHandler = notificationHandler;
     }
 
     /**
@@ -80,6 +97,7 @@ public class Marketplace {
             case BID -> placeBid(arguments);
             case BIN -> createBin(arguments);
             case BUY -> buyListing(arguments);
+            case DELETE -> deleteListing(arguments);
             case FIND -> findListings(arguments);
             case LIST -> listListings();
             case MYLISTINGS -> myListings();
@@ -128,8 +146,63 @@ public class Marketplace {
         }
         bin.setState(ListingState.SOLD);
         bin.setBuyerUsername(currentUser.getUsername());
+        notificationHandler.accept(bin.getOwnerUsername(), "Your BIN listing \""
+                + bin.getName() + "\" [" + bin.getUuid() + "] was purchased by "
+                + currentUser.getUsername() + " for " + price + " coins.");
         ui.showMessage("Purchased [" + uuid + "]: " + bin.getName() + " for " + price
                 + " coins. Balance: " + currentUser.getBalance() + " coins.");
+    }
+
+    /**
+     * Deletes an active listing owned by the current user.
+     *
+     * <p>If the listing is an auction with a highest bid, the bidder is refunded and notified.
+     * An expired auction must be resolved normally and cannot be deleted.
+     *
+     * @param arguments raw argument text containing the listing UUID.
+     * @throws AppException if the UUID is missing or unknown, the current user does not own the listing,
+     *         the listing is no longer active, or the auction has expired.
+     */
+    private void deleteListing(String arguments) throws AppException {
+        String uuid = requireField(arguments, "listing UUID");
+        Listing listing = listingStore.get(uuid);
+        if (listing == null) {
+            throw new AppException("No listing found with UUID [" + uuid + "].");
+        }
+        if (!listing.getOwnerUsername().equals(currentUser.getUsername())) {
+            throw new AppException("You can only delete your own listings.");
+        }
+        if (!listing.isActive()) {
+            throw new AppException("Listing [" + uuid + "] is no longer active and cannot be deleted.");
+        }
+        if (listing instanceof AuctionListing auction && auction.isExpired()) {
+            throw new AppException("Auction [" + uuid + "] has already ended and cannot be deleted.");
+        }
+
+        refundHighestBidForDeletedAuction(listing);
+        listingStore.remove(uuid);
+        ui.showMessage("Deleted listing [" + uuid + "]: " + listing.getName() + ".");
+    }
+
+    /**
+     * Refunds and notifies the highest bidder when an auction listing is deleted.
+     */
+    private void refundHighestBidForDeletedAuction(Listing listing) throws AppException {
+        if (!(listing instanceof AuctionListing auction) || !auction.hasBids()) {
+            return;
+        }
+        Bid highestBid = auction.getHighestBid();
+        User highestBidder = userStore.get(highestBid.getBidderUsername());
+        ensureCanCredit(highestBidder, highestBid.getAmount(),
+                "The highest bidder cannot receive their refund.");
+        if (highestBidder == null) {
+            return;
+        }
+
+        highestBidder.addBalance(highestBid.getAmount());
+        notificationHandler.accept(highestBidder.getUsername(), "The auction \""
+                + auction.getName() + "\" [" + auction.getUuid() + "] was deleted by the seller. Your bid of "
+                + highestBid.getAmount() + " coins has been refunded.");
     }
 
     /**
@@ -191,6 +264,9 @@ public class Marketplace {
         // Refund the previous highest bidder before replacing the bid.
         if (previousBidder != null) {
             previousBidder.addBalance(previousBid.getAmount());
+            notificationHandler.accept(previousBidder.getUsername(), "You were outbid on \""
+                    + auction.getName() + "\" [" + uuid + "]. Your bid of "
+                    + previousBid.getAmount() + " coins has been refunded.");
         }
 
         auction.setHighestBid(new Bid(currentUser.getUsername(), amount));
