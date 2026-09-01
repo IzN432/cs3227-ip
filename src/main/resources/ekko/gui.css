@@ -16,6 +16,7 @@
 }
 #replyStatus { -fx-font-family: "Consolas", monospace; -fx-text-fill: #d9b77a; }
 #userLabel { -fx-text-fill: #ededed; }
+#balanceLabel { -fx-text-fill: #d9b77a; }
 .muted, .message-author { -fx-text-fill: #adadad; -fx-font-size: 12px; }
 .message-author { -fx-font-weight: bold; }
 .scroll-pane, .scroll-pane > .viewport {

@@ -363,6 +363,14 @@ class MarketplaceTest {
     }
 
     @Test
+    void processCommand_auction_dateOnlyEndTime_showsError() {
+        marketplace.processCommand("becomeseller");
+        marketplace.processCommand("auction Watch /desc desc /price 50 /end 2099-01-01");
+        assertTrue(errors.get(0).contains("time"), errors.get(0));
+        assertTrue(listingStore().isEmpty());
+    }
+
+    @Test
     void processCommand_auction_pastEndTime_showsError() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("auction Watch /desc desc /price 50 /end 2000-01-01 1200");

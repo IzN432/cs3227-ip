@@ -236,6 +236,14 @@ public class Marketplace {
             throw new AppException("Please provide an end date/time: " + usage);
         }
         String endText = parsed.getArgument(ArgumentName.END);
+        try {
+            DateTimeParser.parseDate(endText);
+            throw new AppException("Please include a time with the end date. Example: /end 2026-09-02 1800");
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception ignored) {
+            // Not a date-only string — proceed to parse as date/time below.
+        }
         LocalDateTime endDateTime;
         try {
             endDateTime = DateTimeParser.parse(endText);

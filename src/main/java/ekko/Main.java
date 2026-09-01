@@ -45,9 +45,11 @@ public class Main extends Application {
     private TextField input;
     private Button send;
     private Marketplace marketplace;
+    private User currentUser;
     private Label status;
     private Label identity;
     private Label userLabel;
+    private Label balanceLabel;
     /** Schedules a reply without blocking the JavaFX application thread. */
     private PauseTransition pendingReply;
 
@@ -79,7 +81,12 @@ public class Main extends Application {
         userLabel = new Label();
         userLabel.setId("userLabel");
         userLabel.getStyleClass().add("app-title");
-        HBox heading = new HBox(headingText, userLabel);
+        balanceLabel = new Label();
+        balanceLabel.setId("balanceLabel");
+        balanceLabel.getStyleClass().add("app-title");
+        HBox userInfo = new HBox(8, balanceLabel, userLabel);
+        userInfo.setAlignment(Pos.TOP_RIGHT);
+        HBox heading = new HBox(headingText, userInfo);
         heading.setAlignment(Pos.TOP_LEFT);
         ScrollPane suggestions = createCommandSuggestions();
         TitledPane commandHelp = new TitledPane("Command reference", suggestions);
@@ -200,11 +207,12 @@ public class Main extends Application {
     private void startSession() {
         GuiUi ui = new GuiUi(message -> appendMessage("Ekko", message),
                 message -> appendMessage("Error", message), () -> "yes");
-        User currentUser = new User("user", "password");
+        currentUser = new User("user", "password");
         UserStore userStore = new UserStore(java.util.List.of(currentUser));
         ListingStore listingStore = new ListingStore(java.util.List.of());
         marketplace = new Marketplace(ui, currentUser, userStore, listingStore);
         userLabel.setText(currentUser.getUsername());
+        updateBalanceLabel();
         ui.showWelcome("Ekko");
         input.requestFocus();
     }
@@ -245,6 +253,7 @@ public class Main extends Application {
             stopSession();
             return;
         }
+        updateBalanceLabel();
         input.setDisable(false);
         send.setDisable(false);
         input.requestFocus();
@@ -286,6 +295,13 @@ public class Main extends Application {
     }
 
     /**
+     * Updates the balance label to reflect the current user's coin balance.
+     */
+    private void updateBalanceLabel() {
+        balanceLabel.setText("\uD83E\uDE99 " + currentUser.getBalance());
+    }
+
+    /**
      * Copies the given text to the system clipboard and briefly shows a confirmation.
      */
     private void copyToClipboard(String text) {
@@ -312,6 +328,7 @@ public class Main extends Application {
         send.setDisable(true);
         identity.setText("EKKO OFFLINE");
         userLabel.setText("");
+        balanceLabel.setText("");
         input.setPromptText("Session ended. Close this window to exit.");
     }
 
