@@ -15,8 +15,8 @@ import ekko.listing.ListingStore;
 import ekko.parser.ArgumentName;
 import ekko.parser.ArgumentParser;
 import ekko.parser.Command;
-import ekko.parser.Parser;
 import ekko.parser.ParsedArguments;
+import ekko.parser.Parser;
 import ekko.ui.Ui;
 import ekko.users.User;
 import ekko.users.UserStore;
@@ -83,6 +83,7 @@ public class Marketplace {
             case FIND -> findListings(arguments);
             case LIST -> listListings();
             case MYLISTINGS -> myListings();
+            case MYPURCHASES -> myPurchases();
             case TOPUP -> topUp(arguments);
             case WITHDRAW -> withdraw(arguments);
             case BYE -> {
@@ -382,6 +383,22 @@ public class Marketplace {
         StringBuilder sb = new StringBuilder("Your listings (" + listings.size() + "):");
         for (Listing listing : listings) {
             sb.append("\n\n").append(formatListing(listing, true));
+        }
+        ui.showMessage(sb.toString());
+    }
+
+    /**
+     * Displays completed BIN purchases and won auctions for the current user.
+     */
+    private void myPurchases() {
+        java.util.List<Listing> purchases = listingStore.getPurchasesByBuyer(currentUser.getUsername());
+        if (purchases.isEmpty()) {
+            ui.showMessage("You have no purchases.");
+            return;
+        }
+        StringBuilder sb = new StringBuilder("Your purchases (" + purchases.size() + "):");
+        for (Listing purchase : purchases) {
+            sb.append("\n\n").append(formatListing(purchase, true));
         }
         ui.showMessage(sb.toString());
     }

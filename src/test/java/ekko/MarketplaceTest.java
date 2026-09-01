@@ -252,6 +252,43 @@ class MarketplaceTest {
         assertTrue(output.contains("[SOLD]"), output);
     }
 
+    // --- mypurchases ---
+
+    @Test
+    void processCommand_noPurchases_showsEmptyMessage() {
+        marketplace.processCommand("mypurchases");
+        assertEquals("You have no purchases.", messages.get(0));
+    }
+
+    @Test
+    void processCommand_myPurchases_showsBoughtBinAndWonAuctionOnly() {
+        BinListing boughtBin = new BinListing("b001", "seller", "Lamp", "desc", 100);
+        boughtBin.setBuyerUsername("user");
+        boughtBin.setState(ListingState.SOLD);
+        BinListing otherBin = new BinListing("b002", "seller", "Chair", "desc", 60);
+        otherBin.setBuyerUsername("other");
+        otherBin.setState(ListingState.SOLD);
+        AuctionListing wonAuction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().minusHours(1));
+        wonAuction.setHighestBid(new Bid("user", 75));
+        wonAuction.setState(ListingState.SOLD);
+        AuctionListing activeBid = new AuctionListing("a002", "seller", "Bag", "desc", 40,
+                LocalDateTime.now().plusHours(1));
+        activeBid.setHighestBid(new Bid("user", 45));
+        Marketplace mp = marketplaceWith(List.of(boughtBin, otherBin, wonAuction, activeBid));
+
+        mp.processCommand("mypurchases");
+
+        String output = messages.get(0);
+        assertTrue(output.startsWith("Your purchases (2):"), output);
+        assertTrue(output.contains("b001"), output);
+        assertTrue(output.contains("[BIN]"), output);
+        assertTrue(output.contains("a001"), output);
+        assertTrue(output.contains("[AUC]"), output);
+        assertFalse(output.contains("b002"), output);
+        assertFalse(output.contains("a002"), output);
+    }
+
     /**
      * Creates a fresh marketplace wired to the current user and the given listings.
      */

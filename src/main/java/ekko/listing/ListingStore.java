@@ -116,6 +116,33 @@ public class ListingStore {
     }
 
     /**
+     * Returns all completed purchases made by the given buyer.
+     *
+     * <p>A purchase is either a sold BIN listing that records the buyer, or a sold
+     * auction whose highest bidder is the winner.
+     *
+     * @param buyerUsername username of the buyer.
+     */
+    public List<Listing> getPurchasesByBuyer(String buyerUsername) {
+        return listings.values().stream()
+                .filter(listing -> listing.getState() == ListingState.SOLD)
+                .filter(listing -> isPurchasedBy(listing, buyerUsername))
+                .toList();
+    }
+
+    /**
+     * Returns whether the listing records the given user as its buyer or auction winner.
+     */
+    private boolean isPurchasedBy(Listing listing, String buyerUsername) {
+        if (listing instanceof BinListing bin) {
+            return buyerUsername.equals(bin.getBuyerUsername());
+        }
+        AuctionListing auction = (AuctionListing) listing;
+        return auction.hasBids()
+                && buyerUsername.equals(auction.getHighestBid().getBidderUsername());
+    }
+
+    /**
      * Returns active listings whose name or description contains the given
      * case-sensitive substring, with no price filter applied.
      *

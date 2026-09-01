@@ -14,6 +14,7 @@ public enum Command {
     LIST("", "Browse all active listings."),
     FIND("<keyword> [/low <min>] [/high <max>]", "Search listings by name or description."),
     MYLISTINGS("", "View your own listings."),
+    MYPURCHASES("", "View your completed BIN and auction purchases."),
     TOPUP("<amount>", "Add coins to your balance."),
     WITHDRAW("<amount>", "Withdraw coins from your balance."),
     BALANCE("", "Check your current coin balance."),
