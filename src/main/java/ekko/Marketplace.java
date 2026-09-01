@@ -58,13 +58,58 @@ public class Marketplace {
         String arguments = parsed.arguments();
 
         switch (command) {
+            case BALANCE -> showBalance();
             case BECOMESELLER -> becomeSeller();
+            case TOPUP -> topUp(arguments);
             case BYE -> {
                 return true;
             }
             default -> throw new AppException("This command is not yet implemented.");
         }
         return false;
+    }
+
+    /**
+     * Adds coins to the current user's balance.
+     *
+     * @param arguments raw argument text containing the amount.
+     * @throws AppException if the amount is missing, not a whole number, or not positive.
+     */
+    private void topUp(String arguments) throws AppException {
+        int amount = parsePositiveInt(arguments, "top-up amount");
+        currentUser.addBalance(amount);
+        ui.showMessage("Topped up " + amount + " coins. Balance: " + currentUser.getBalance() + " coins.");
+    }
+
+    /**
+     * Displays the current user's coin balance.
+     */
+    private void showBalance() {
+        ui.showMessage("Balance: " + currentUser.getBalance() + " coins.");
+    }
+
+    /**
+     * Parses a positive integer from a raw argument string.
+     *
+     * @param text raw text to parse.
+     * @param fieldName human-readable field name used in error messages.
+     * @return the parsed value.
+     * @throws AppException if the text is blank, not an integer, or not positive.
+     */
+    private int parsePositiveInt(String text, String fieldName) throws AppException {
+        if (text.isBlank()) {
+            throw new AppException("Please provide a " + fieldName + ".");
+        }
+        int value;
+        try {
+            value = Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            throw new AppException("The " + fieldName + " must be a whole number.");
+        }
+        if (value <= 0) {
+            throw new AppException("The " + fieldName + " must be positive.");
+        }
+        return value;
     }
 
     /**
