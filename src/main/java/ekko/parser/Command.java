@@ -12,7 +12,7 @@ public enum Command {
     BID("<uuid> /price <amount>", "Place a bid on an auction."),
     BUY("<uuid>", "Purchase a BIN listing immediately."),
     LIST("", "Browse all active listings."),
-    FIND("<keyword>", "Search listings by name or description."),
+    FIND("<keyword> [/low <min>] [/high <max>]", "Search listings by name or description."),
     MYLISTINGS("", "View your own listings."),
     TOPUP("<amount>", "Add coins to your balance."),
     WITHDRAW("<amount>", "Withdraw coins from your balance."),
