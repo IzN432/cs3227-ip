@@ -12,7 +12,9 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
@@ -40,6 +42,8 @@ import ekko.users.UserStore;
 public class Main extends Application {
     private static final Duration RESPONSE_DELAY = Duration.millis(750);
 
+    private UserStore userStore;
+
     private VBox conversation;
     private ScrollPane conversationScroll;
     private TextField input;
@@ -55,16 +59,205 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        VBox root = createContent();
+        User defaultUser = new User("user", "password");
+        userStore = new UserStore(java.util.List.of(defaultUser));
+
         stage.setTitle("Ekko");
-        stage.setScene(new Scene(root, 720, 540));
-        stage.getScene().getStylesheets().add(Main.class.getResource("/ekko/gui.css").toExternalForm());
+        stage.setOnHidden(event -> stopSession());
+        showLoginScene(stage);
+        stage.show();
+    }
+
+    /**
+     * Creates and displays the login scene on the given stage.
+     */
+    private void showLoginScene(Stage stage) {
+        VBox root = createLoginContent(stage);
+        Scene scene = new Scene(root, 420, 340);
+        scene.getStylesheets().add(Main.class.getResource("/ekko/gui.css").toExternalForm());
+        stage.setMinWidth(320);
+        stage.setMinHeight(260);
+        stage.setScene(scene);
+    }
+
+    /**
+     * Creates and displays the marketplace scene on the given stage for the authenticated user.
+     */
+    private void showMarketplaceScene(Stage stage, User user) {
+        VBox root = createContent();
+        Scene scene = new Scene(root, 720, 540);
+        scene.getStylesheets().add(Main.class.getResource("/ekko/gui.css").toExternalForm());
         stage.setMinWidth(420);
         stage.setMinHeight(360);
-        stage.setOnHidden(event -> stopSession());
-        stage.show();
+        stage.setScene(scene);
+        startMarketplace(user);
+    }
 
-        startSession();
+    /**
+     * Builds the login form with username, password, and an inline error label.
+     */
+    private VBox createLoginContent(Stage stage) {
+        Label title = new Label("EKKO");
+        title.getStyleClass().add("app-title");
+        Label subtitle = new Label("Sign in to continue.");
+        subtitle.getStyleClass().add("muted");
+
+        TextField usernameField = new TextField();
+        usernameField.setId("loginUsername");
+        usernameField.setPromptText("Username");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setId("loginPassword");
+        passwordField.setPromptText("Password");
+
+        Label errorLabel = new Label();
+        errorLabel.setId("loginError");
+        errorLabel.getStyleClass().add("muted");
+        errorLabel.setWrapText(true);
+        errorLabel.managedProperty().bind(errorLabel.textProperty().isNotEmpty());
+        errorLabel.visibleProperty().bind(errorLabel.managedProperty());
+
+        Button loginButton = new Button("Sign in");
+        loginButton.setId("loginButton");
+        loginButton.setDefaultButton(true);
+        loginButton.setMaxWidth(Double.MAX_VALUE);
+
+        Runnable attemptLogin = () -> {
+            String username = usernameField.getText().trim();
+            String password = passwordField.getText();
+            User user = userStore.authenticate(username, password);
+            if (user == null) {
+                errorLabel.setText("Invalid username or password.");
+                passwordField.clear();
+                passwordField.requestFocus();
+            } else {
+                showMarketplaceScene(stage, user);
+            }
+        };
+
+        Button createAccountButton = new Button("Create account");
+        createAccountButton.setId("createAccountButton");
+        createAccountButton.setMaxWidth(Double.MAX_VALUE);
+
+        Label firstTimeLabel = new Label("First time?");
+        firstTimeLabel.getStyleClass().add("muted");
+        firstTimeLabel.setMaxWidth(Double.MAX_VALUE);
+        firstTimeLabel.setAlignment(Pos.CENTER);
+
+        loginButton.setOnAction(e -> attemptLogin.run());
+        usernameField.setOnAction(e -> passwordField.requestFocus());
+        passwordField.setOnAction(e -> attemptLogin.run());
+        createAccountButton.setOnAction(e -> showRegisterScene(stage));
+
+        VBox form = new VBox(10, usernameField, passwordField, errorLabel, loginButton,
+                new Separator(), createAccountButton, firstTimeLabel);
+        form.getStyleClass().add("composer");
+        form.setMaxWidth(280);
+
+        VBox heading = new VBox(4, title, subtitle);
+        heading.setAlignment(Pos.CENTER);
+        VBox root = new VBox(20, heading, form);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(40));
+        usernameField.requestFocus();
+        return root;
+    }
+
+    /**
+     * Creates and displays the registration scene on the given stage.
+     */
+    private void showRegisterScene(Stage stage) {
+        VBox root = createRegisterContent(stage);
+        Scene scene = new Scene(root, 420, 380);
+        scene.getStylesheets().add(Main.class.getResource("/ekko/gui.css").toExternalForm());
+        stage.setScene(scene);
+    }
+
+    /**
+     * Builds the registration form with username, password, confirm-password, and an error label.
+     * On success, adds the new user to the store and transitions to the marketplace.
+     */
+    private VBox createRegisterContent(Stage stage) {
+        Label title = new Label("EKKO");
+        title.getStyleClass().add("app-title");
+        Label subtitle = new Label("Create your account.");
+        subtitle.getStyleClass().add("muted");
+
+        TextField usernameField = new TextField();
+        usernameField.setId("registerUsername");
+        usernameField.setPromptText("Username");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setId("registerPassword");
+        passwordField.setPromptText("Password");
+
+        PasswordField confirmField = new PasswordField();
+        confirmField.setId("registerConfirm");
+        confirmField.setPromptText("Confirm password");
+
+        Label errorLabel = new Label();
+        errorLabel.setId("registerError");
+        errorLabel.getStyleClass().add("muted");
+        errorLabel.setWrapText(true);
+        errorLabel.managedProperty().bind(errorLabel.textProperty().isNotEmpty());
+        errorLabel.visibleProperty().bind(errorLabel.managedProperty());
+
+        Button registerButton = new Button("Create account");
+        registerButton.setId("registerButton");
+        registerButton.setDefaultButton(true);
+        registerButton.setMaxWidth(Double.MAX_VALUE);
+
+        Button backButton = new Button("Back to sign in");
+        backButton.setId("registerBackButton");
+        backButton.setMaxWidth(Double.MAX_VALUE);
+
+        Runnable attemptRegister = () -> {
+            String username = usernameField.getText().trim();
+            String password = passwordField.getText();
+            String confirm = confirmField.getText();
+            if (username.isBlank()) {
+                errorLabel.setText("Please enter a username.");
+                usernameField.requestFocus();
+            } else if (userStore.contains(username)) {
+                errorLabel.setText("That username is already taken.");
+                usernameField.requestFocus();
+            } else if (password.isBlank()) {
+                errorLabel.setText("Please enter a password.");
+                passwordField.requestFocus();
+            } else if (!password.equals(confirm)) {
+                errorLabel.setText("Passwords do not match.");
+                confirmField.clear();
+                confirmField.requestFocus();
+            } else {
+                User newUser = new User(username, password);
+                userStore.add(newUser);
+                showMarketplaceScene(stage, newUser);
+            }
+        };
+
+        Label haveAccountLabel = new Label("Have an account?");
+        haveAccountLabel.getStyleClass().add("muted");
+        haveAccountLabel.setMaxWidth(Double.MAX_VALUE);
+        haveAccountLabel.setAlignment(Pos.CENTER);
+
+        registerButton.setOnAction(e -> attemptRegister.run());
+        usernameField.setOnAction(e -> passwordField.requestFocus());
+        passwordField.setOnAction(e -> confirmField.requestFocus());
+        confirmField.setOnAction(e -> attemptRegister.run());
+        backButton.setOnAction(e -> showLoginScene(stage));
+
+        VBox form = new VBox(10, usernameField, passwordField, confirmField, errorLabel,
+                registerButton, new Separator(), backButton, haveAccountLabel);
+        form.getStyleClass().add("composer");
+        form.setMaxWidth(280);
+
+        VBox heading = new VBox(4, title, subtitle);
+        heading.setAlignment(Pos.CENTER);
+        VBox root = new VBox(20, heading, form);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(40));
+        usernameField.requestFocus();
+        return root;
     }
 
     /**
@@ -201,14 +394,12 @@ public class Main extends Application {
     }
 
     /**
-     * Creates an in-memory marketplace session with a placeholder user.
-     * Login screen and persistent storage will be wired in later.
+     * Initialises the marketplace session for the authenticated user.
      */
-    private void startSession() {
+    private void startMarketplace(User user) {
         GuiUi ui = new GuiUi(message -> appendMessage("Ekko", message),
                 message -> appendMessage("Error", message), () -> "yes");
-        currentUser = new User("user", "password");
-        UserStore userStore = new UserStore(java.util.List.of(currentUser));
+        currentUser = user;
         ListingStore listingStore = new ListingStore(java.util.List.of());
         marketplace = new Marketplace(ui, currentUser, userStore, listingStore);
         userLabel.setText(currentUser.getUsername());
@@ -319,6 +510,10 @@ public class Main extends Application {
      * Keeps the farewell or error visible while preventing further edits.
      */
     private void stopSession() {
+        // No-op if the marketplace scene was never shown (e.g. closed on login screen).
+        if (status == null) {
+            return;
+        }
         if (pendingReply != null) {
             pendingReply.stop();
             pendingReply = null;

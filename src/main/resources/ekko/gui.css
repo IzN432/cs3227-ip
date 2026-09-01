@@ -52,7 +52,7 @@
     -fx-background-color: transparent;
     -fx-text-fill: #ededed;
     -fx-prompt-text-fill: #ababab;
-    -fx-padding: 8 4;
+    -fx-padding: 8 10;
 }
 .text-field:focused { -fx-background-color: #303030; -fx-background-radius: 6; }
 .button {
@@ -65,6 +65,13 @@
 }
 .button:hover { -fx-background-color: #edcc92; }
 .button:focused { -fx-border-color: #fff0cf; -fx-border-radius: 10; }
+#createAccountButton, #registerBackButton {
+    -fx-background-color: #303030;
+    -fx-text-fill: #ededed;
+}
+#createAccountButton:hover, #registerBackButton:hover { -fx-background-color: #3a3a3a; }
+.separator { -fx-padding: 2 0; }
+.separator .line { -fx-border-color: #404040; -fx-border-width: 0.5 0 0 0; }
 .titled-pane > .title { -fx-background-color: transparent; -fx-padding: 6 0; }
 .titled-pane { -fx-text-fill: #bdbdbd; -fx-font-size: 12px; }
 #commandHelp { -fx-background-color: #181818; }
