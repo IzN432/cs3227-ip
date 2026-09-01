@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  */
 public class AuctionListing extends Listing {
 
-    private final int basePrice;
+    private final long basePrice;
     private final LocalDateTime endDateTime;
     /** The current highest bid, or {@code null} if no bids have been placed. */
     private Bid highestBid;
@@ -28,7 +28,7 @@ public class AuctionListing extends Listing {
      * @throws IllegalArgumentException if the base price is not positive or the end time is null.
      */
     public AuctionListing(String uuid, String ownerUsername, String name, String description,
-            int basePrice, LocalDateTime endDateTime) {
+            long basePrice, LocalDateTime endDateTime) {
         super(uuid, ownerUsername, name, description);
         if (basePrice <= 0) {
             throw new IllegalArgumentException("Auction base price must be positive.");
@@ -41,7 +41,7 @@ public class AuctionListing extends Listing {
         this.highestBid = null;
     }
 
-    public int getBasePrice() {
+    public long getBasePrice() {
         return basePrice;
     }
 
@@ -83,7 +83,7 @@ public class AuctionListing extends Listing {
      * Returns the current highest bid amount, or the base price if no bids have been placed.
      */
     @Override
-    public int getListingPrice() {
+    public long getListingPrice() {
         return highestBid != null ? highestBid.getAmount() : basePrice;
     }
 }

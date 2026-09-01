@@ -123,7 +123,7 @@ public class ListingStore {
      * @throws IllegalArgumentException if the keyword is blank.
      */
     public List<Listing> search(String keyword) {
-        return search(keyword, 0, Integer.MAX_VALUE);
+        return search(keyword, 0, Long.MAX_VALUE);
     }
 
     /**
@@ -139,7 +139,7 @@ public class ListingStore {
      * @throws IllegalArgumentException if the keyword is blank, either price is negative,
      *         or {@code highPrice} is less than {@code lowPrice}.
      */
-    public List<Listing> search(String keyword, int lowPrice, int highPrice) {
+    public List<Listing> search(String keyword, long lowPrice, long highPrice) {
         if (keyword == null || keyword.isBlank()) {
             throw new IllegalArgumentException("Search keyword cannot be blank.");
         }

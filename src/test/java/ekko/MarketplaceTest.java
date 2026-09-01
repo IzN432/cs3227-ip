@@ -595,6 +595,65 @@ class MarketplaceTest {
     }
 
     @Test
+    void processCommand_bid_refundExceedsIntegerMaximum_preservesFullBalance() {
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().plusHours(1));
+        auction.setHighestBid(new Bid("other", 100));
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        User other = new User("other", "password");
+        other.setBalance(Integer.MAX_VALUE);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder, other)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 101");
+
+        assertEquals((long) Integer.MAX_VALUE + 100, other.getBalance());
+        assertEquals("user", auction.getHighestBid().getBidderUsername());
+    }
+
+    @Test
+    void processCommand_bid_currentBidAtLongMaximum_showsErrorWithoutChangingBalances() {
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().plusHours(1));
+        auction.setHighestBid(new Bid("other", Long.MAX_VALUE));
+        User bidder = new User("user", "password");
+        bidder.setBalance(Long.MAX_VALUE);
+        User other = new User("other", "password");
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder, other)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price " + Long.MAX_VALUE);
+
+        assertEquals(Long.MAX_VALUE, bidder.getBalance());
+        assertEquals("other", auction.getHighestBid().getBidderUsername());
+        assertTrue(errors.get(0).contains("maximum supported bid"), errors.get(0));
+    }
+
+    @Test
+    void processCommand_bid_refundWouldOverflow_rejectsBidWithoutDeductingFunds() {
+        AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
+                LocalDateTime.now().plusHours(1));
+        auction.setHighestBid(new Bid("other", 100));
+        User bidder = new User("user", "password");
+        bidder.addBalance(200);
+        User other = new User("other", "password");
+        other.setBalance(Long.MAX_VALUE);
+        Marketplace mp = new Marketplace(captureUi(), bidder,
+                new UserStore(List.of(bidder, other)),
+                new ListingStore(List.of(auction)));
+
+        mp.processCommand("bid a001 /price 101");
+
+        assertEquals(200, bidder.getBalance());
+        assertEquals(Long.MAX_VALUE, other.getBalance());
+        assertEquals("other", auction.getHighestBid().getBidderUsername());
+        assertTrue(errors.get(0).contains("cannot receive their refund"), errors.get(0));
+    }
+
+    @Test
     void processCommand_bid_amountBelowMinimum_showsError() {
         LocalDateTime future = LocalDateTime.now().plusHours(1);
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);

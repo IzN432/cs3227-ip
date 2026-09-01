@@ -14,9 +14,9 @@ import ekko.listing.ListingState;
 import ekko.listing.ListingStore;
 import ekko.parser.ArgumentName;
 import ekko.parser.ArgumentParser;
-import ekko.parser.ParsedArguments;
 import ekko.parser.Command;
 import ekko.parser.Parser;
+import ekko.parser.ParsedArguments;
 import ekko.ui.Ui;
 import ekko.users.User;
 import ekko.users.UserStore;
@@ -115,12 +115,13 @@ public class Marketplace {
         if (bin.getOwnerUsername().equals(currentUser.getUsername())) {
             throw new AppException("You cannot buy your own listing.");
         }
-        int price = bin.getPrice();
+        long price = bin.getPrice();
+        User seller = userStore.get(bin.getOwnerUsername());
+        ensureCanCredit(seller, price, "The seller cannot receive this payment.");
         if (!currentUser.deductBalance(price)) {
             throw new AppException("Insufficient balance. You have " + currentUser.getBalance()
                     + " coins, but this listing costs " + price + " coins.");
         }
-        User seller = userStore.get(bin.getOwnerUsername());
         if (seller != null) {
             seller.addBalance(price);
         }
@@ -147,7 +148,7 @@ public class Marketplace {
         if (!parsed.containsArgument(ArgumentName.PRICE)) {
             throw new AppException("Please provide a bid amount: bid <uuid> /price <amount>");
         }
-        int amount = parsePositiveInt(parsed.getArgument(ArgumentName.PRICE), "bid amount after /price");
+        long amount = parsePositiveLong(parsed.getArgument(ArgumentName.PRICE), "bid amount after /price");
 
         Listing listing = listingStore.get(uuid);
         if (listing == null) {
@@ -165,22 +166,30 @@ public class Marketplace {
         if (auction.hasBids() && auction.getHighestBid().getBidderUsername().equals(currentUser.getUsername())) {
             throw new AppException("You already hold the highest bid on [" + uuid + "].");
         }
-        int minimumBid = auction.hasBids() ? auction.getListingPrice() + 1 : auction.getBasePrice();
+        if (auction.hasBids() && auction.getListingPrice() == Long.MAX_VALUE) {
+            throw new AppException("Auction [" + uuid + "] has reached the maximum supported bid.");
+        }
+        long minimumBid = auction.hasBids() ? auction.getListingPrice() + 1 : auction.getBasePrice();
         if (amount < minimumBid) {
             throw new AppException("Your bid must be at least " + minimumBid + " coins"
                     + (auction.hasBids() ? " to beat the current highest bid." : " (the starting bid)."));
+        }
+
+        User previousBidder = null;
+        Bid previousBid = null;
+        if (auction.hasBids()) {
+            previousBid = auction.getHighestBid();
+            previousBidder = userStore.get(previousBid.getBidderUsername());
+            ensureCanCredit(previousBidder, previousBid.getAmount(),
+                    "The previous bidder cannot receive their refund.");
         }
         if (!currentUser.deductBalance(amount)) {
             throw new AppException("Insufficient balance. You have " + currentUser.getBalance() + " coins.");
         }
 
         // Refund the previous highest bidder before replacing the bid.
-        if (auction.hasBids()) {
-            Bid previous = auction.getHighestBid();
-            User previousBidder = userStore.get(previous.getBidderUsername());
-            if (previousBidder != null) {
-                previousBidder.addBalance(previous.getAmount());
-            }
+        if (previousBidder != null) {
+            previousBidder.addBalance(previousBid.getAmount());
         }
 
         auction.setHighestBid(new Bid(currentUser.getUsername(), amount));
@@ -205,7 +214,7 @@ public class Marketplace {
         if (!parsed.containsArgument(ArgumentName.PRICE)) {
             throw new AppException("Please provide a price: bin <name> /desc <description> /price <price>");
         }
-        int price = parsePositiveInt(parsed.getArgument(ArgumentName.PRICE), "price after /price");
+        long price = parsePositiveLong(parsed.getArgument(ArgumentName.PRICE), "price after /price");
         String uuid = generateUuid();
         listingStore.add(new BinListing(uuid, currentUser.getUsername(), name, desc, price));
         ui.showMessage("BIN listing created [" + uuid + "]: " + name + " — " + price + " coins.");
@@ -232,7 +241,7 @@ public class Marketplace {
         if (!parsed.containsArgument(ArgumentName.PRICE)) {
             throw new AppException("Please provide a starting bid: " + usage);
         }
-        int basePrice = parsePositiveInt(parsed.getArgument(ArgumentName.PRICE), "starting bid after /price");
+        long basePrice = parsePositiveLong(parsed.getArgument(ArgumentName.PRICE), "starting bid after /price");
         if (!parsed.containsArgument(ArgumentName.END)) {
             throw new AppException("Please provide an end date/time: " + usage);
         }
@@ -315,13 +324,13 @@ public class Marketplace {
         ParsedArguments parsed = ArgumentParser.parse(arguments, Set.of(ArgumentName.LOW, ArgumentName.HIGH));
         String keyword = requireField(parsed.getDescription(), "search keyword");
 
-        int low = 0;
-        int high = Integer.MAX_VALUE;
+        long low = 0;
+        long high = Long.MAX_VALUE;
         if (parsed.containsArgument(ArgumentName.LOW)) {
-            low = parsePositiveInt(parsed.getArgument(ArgumentName.LOW), "minimum price after /low");
+            low = parsePositiveLong(parsed.getArgument(ArgumentName.LOW), "minimum price after /low");
         }
         if (parsed.containsArgument(ArgumentName.HIGH)) {
-            high = parsePositiveInt(parsed.getArgument(ArgumentName.HIGH), "maximum price after /high");
+            high = parsePositiveLong(parsed.getArgument(ArgumentName.HIGH), "maximum price after /high");
         }
         if (high < low) {
             throw new AppException("Maximum price (" + high + ") cannot be less than minimum price (" + low + ").");
@@ -417,8 +426,12 @@ public class Marketplace {
      * @throws AppException if the amount is missing, not a whole number, or not positive.
      */
     private void topUp(String arguments) throws AppException {
-        int amount = parsePositiveInt(arguments, "top-up amount");
-        currentUser.addBalance(amount);
+        long amount = parsePositiveLong(arguments, "top-up amount");
+        try {
+            currentUser.addBalance(amount);
+        } catch (ArithmeticException e) {
+            throw new AppException("The top-up would exceed the maximum supported balance.");
+        }
         ui.showMessage("Topped up " + amount + " coins. Balance: " + currentUser.getBalance() + " coins.");
     }
 
@@ -430,7 +443,7 @@ public class Marketplace {
      *         or exceeds the current balance.
      */
     private void withdraw(String arguments) throws AppException {
-        int amount = parsePositiveInt(arguments, "withdrawal amount");
+        long amount = parsePositiveLong(arguments, "withdrawal amount");
         if (!currentUser.deductBalance(amount)) {
             throw new AppException("Insufficient balance. You have " + currentUser.getBalance() + " coins.");
         }
@@ -445,20 +458,20 @@ public class Marketplace {
     }
 
     /**
-     * Parses a positive integer from a raw argument string.
+     * Parses a positive 64-bit integer from a raw argument string.
      *
      * @param text raw text to parse.
      * @param fieldName human-readable field name used in error messages.
      * @return the parsed value.
      * @throws AppException if the text is blank, not an integer, or not positive.
      */
-    private int parsePositiveInt(String text, String fieldName) throws AppException {
+    private long parsePositiveLong(String text, String fieldName) throws AppException {
         if (text.isBlank()) {
             throw new AppException("Please provide a " + fieldName + ".");
         }
-        int value;
+        long value;
         try {
-            value = Integer.parseInt(text.trim());
+            value = Long.parseLong(text.trim());
         } catch (NumberFormatException e) {
             throw new AppException("The " + fieldName + " must be a whole number.");
         }
@@ -466,6 +479,25 @@ public class Marketplace {
             throw new AppException("The " + fieldName + " must be positive.");
         }
         return value;
+    }
+
+    /**
+     * Verifies that a user can receive a credit without overflowing their balance.
+     *
+     * @param user user receiving the credit, or {@code null} if the account is unavailable.
+     * @param amount positive amount to credit.
+     * @param errorMessage message shown when the credit cannot be represented.
+     * @throws AppException if crediting the user would exceed the supported balance.
+     */
+    private void ensureCanCredit(User user, long amount, String errorMessage) throws AppException {
+        if (user == null) {
+            return;
+        }
+        try {
+            Math.addExact(user.getBalance(), amount);
+        } catch (ArithmeticException e) {
+            throw new AppException(errorMessage);
+        }
     }
 
     /**

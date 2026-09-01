@@ -20,7 +20,7 @@ public class User {
     /** SHA-256 hex digest of the password supplied at construction. */
     private final String hashedPassword;
     private boolean isSeller;
-    private int balance;
+    private long balance;
 
     /**
      * Creates a new buyer account with a zero balance.
@@ -83,7 +83,7 @@ public class User {
         this.isSeller = isSeller;
     }
 
-    public int getBalance() {
+    public long getBalance() {
         return balance;
     }
 
@@ -93,7 +93,7 @@ public class User {
      * @param balance new balance; must not be negative.
      * @throws IllegalArgumentException if the balance is negative.
      */
-    public void setBalance(int balance) {
+    public void setBalance(long balance) {
         if (balance < 0) {
             throw new IllegalArgumentException("Balance cannot be negative.");
         }
@@ -105,12 +105,13 @@ public class User {
      *
      * @param amount amount to add; must be positive.
      * @throws IllegalArgumentException if the amount is not positive.
+     * @throws ArithmeticException if the resulting balance would exceed {@link Long#MAX_VALUE}.
      */
-    public void addBalance(int amount) {
+    public void addBalance(long amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Top-up amount must be positive.");
         }
-        this.balance += amount;
+        this.balance = Math.addExact(this.balance, amount);
     }
 
     /**
@@ -120,7 +121,7 @@ public class User {
      * @return {@code true} if the deduction succeeded; {@code false} if the balance was insufficient.
      * @throws IllegalArgumentException if the amount is not positive.
      */
-    public boolean deductBalance(int amount) {
+    public boolean deductBalance(long amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Deduction amount must be positive.");
         }

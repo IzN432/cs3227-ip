@@ -70,9 +70,7 @@ public class AuctionProcessor {
         Bid winningBid = auction.getHighestBid();
         String sellerUsername = auction.getOwnerUsername();
         String winnerUsername = winningBid.getBidderUsername();
-        int amount = winningBid.getAmount();
-
-        auction.setState(ListingState.SOLD);
+        long amount = winningBid.getAmount();
 
         User seller = userStore.get(sellerUsername);
         if (seller != null) {
@@ -82,6 +80,8 @@ public class AuctionProcessor {
                     auction.getName(), auction.getUuid(), winnerUsername, amount
             ));
         }
+
+        auction.setState(ListingState.SOLD);
 
         addNotification(notifications, winnerUsername, String.format(
                 "You won the auction \"%s\" [%s] for %d coins.",

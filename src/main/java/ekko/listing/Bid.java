@@ -10,7 +10,7 @@ package ekko.listing;
 public class Bid {
 
     private final String bidderUsername;
-    private final int amount;
+    private final long amount;
 
     /**
      * Creates a bid with the given bidder and amount.
@@ -19,7 +19,7 @@ public class Bid {
      * @param amount bid amount; must be greater than zero.
      * @throws IllegalArgumentException if the username is blank or the amount is not positive.
      */
-    public Bid(String bidderUsername, int amount) {
+    public Bid(String bidderUsername, long amount) {
         if (bidderUsername == null || bidderUsername.isBlank()) {
             throw new IllegalArgumentException("Bidder username cannot be blank.");
         }
@@ -34,7 +34,7 @@ public class Bid {
         return bidderUsername;
     }
 
-    public int getAmount() {
+    public long getAmount() {
         return amount;
     }
 }

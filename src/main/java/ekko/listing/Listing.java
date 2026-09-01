@@ -86,5 +86,5 @@ public abstract class Listing {
      * <p>For BIN listings this is the fixed sale price. For auction listings
      * this is the current highest bid, or the base price if no bids have been placed.
      */
-    public abstract int getListingPrice();
+    public abstract long getListingPrice();
 }

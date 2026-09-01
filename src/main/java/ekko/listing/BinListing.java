@@ -5,7 +5,7 @@ package ekko.listing;
  */
 public class BinListing extends Listing {
 
-    private final int price;
+    private final long price;
     /** Username of the buyer, or {@code null} if the listing has not been purchased yet. */
     private String buyerUsername;
 
@@ -19,7 +19,7 @@ public class BinListing extends Listing {
      * @param price fixed sale price; must be positive.
      * @throws IllegalArgumentException if the price is not positive.
      */
-    public BinListing(String uuid, String ownerUsername, String name, String description, int price) {
+    public BinListing(String uuid, String ownerUsername, String name, String description, long price) {
         super(uuid, ownerUsername, name, description);
         if (price <= 0) {
             throw new IllegalArgumentException("BIN price must be positive.");
@@ -28,12 +28,12 @@ public class BinListing extends Listing {
         this.buyerUsername = null;
     }
 
-    public int getPrice() {
+    public long getPrice() {
         return price;
     }
 
     @Override
-    public int getListingPrice() {
+    public long getListingPrice() {
         return price;
     }
 

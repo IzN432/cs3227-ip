@@ -85,6 +85,25 @@ class UserTest {
     }
 
     @Test
+    void addBalance_resultExceedsLongMaximum_throwsExceptionAndPreservesBalance() {
+        User user = new User("alice", "password");
+        user.setBalance(Long.MAX_VALUE);
+
+        assertThrows(ArithmeticException.class, () -> user.addBalance(1));
+        assertEquals(Long.MAX_VALUE, user.getBalance());
+    }
+
+    @Test
+    void addBalance_resultExceedsIntegerMaximum_usesLongBalance() {
+        User user = new User("alice", "password");
+        user.setBalance(Integer.MAX_VALUE);
+
+        user.addBalance(1);
+
+        assertEquals((long) Integer.MAX_VALUE + 1, user.getBalance());
+    }
+
+    @Test
     void deductBalance_sufficientFunds_deductsAndReturnsTrue() {
         User user = new User("alice", "password");
         user.addBalance(200);
