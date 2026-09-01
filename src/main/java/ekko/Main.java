@@ -489,7 +489,7 @@ public class Main extends Application {
      * Updates the balance label to reflect the current user's coin balance.
      */
     private void updateBalanceLabel() {
-        balanceLabel.setText("\uD83E\uDE99 " + currentUser.getBalance());
+        balanceLabel.setText(currentUser.getBalance() + " coins");
     }
 
     /**
