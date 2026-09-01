@@ -64,13 +64,13 @@ public class UserStore {
     /**
      * Authenticates a login attempt.
      *
-     * @param username username supplied by the user.
-     * @param hashedPassword hashed password supplied by the user.
+     * @param username    username supplied by the user.
+     * @param rawPassword plaintext password to verify.
      * @return the authenticated {@link User}, or {@code null} if the credentials are invalid.
      */
-    public User authenticate(String username, String hashedPassword) {
+    public User authenticate(String username, String rawPassword) {
         User user = users.get(username);
-        if (user == null || !user.getHashedPassword().equals(hashedPassword)) {
+        if (user == null || !user.checkPassword(rawPassword)) {
             return null;
         }
         return user;

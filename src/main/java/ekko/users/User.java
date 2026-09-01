@@ -1,15 +1,23 @@
 package ekko.users;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+
 /**
  * Represents a registered user of the marketplace.
  *
  * <p>All users start as buyers with a zero balance. Seller status is granted
  * on request via the {@code becomeseller} command. Usernames are immutable
  * after registration; balance and seller status may change during a session.
+ *
+ * <p>Passwords are stored as a SHA-256 hex digest. The raw password is never
+ * retained after construction.
  */
 public class User {
 
     private final String username;
+    /** SHA-256 hex digest of the password supplied at construction. */
     private final String hashedPassword;
     private boolean isSeller;
     private int balance;
@@ -17,29 +25,54 @@ public class User {
     /**
      * Creates a new buyer account with a zero balance.
      *
-     * @param username alphabetic username; must not be blank.
-     * @param hashedPassword hashed password; must not be blank.
+     * <p>The raw password is hashed with SHA-256 before being stored;
+     * it is not retained anywhere in this object.
+     *
+     * @param username    alphabetic username; must not be blank.
+     * @param rawPassword plaintext password to hash; must not be blank.
      * @throws IllegalArgumentException if either argument is null or blank.
      */
-    public User(String username, String hashedPassword) {
+    public User(String username, String rawPassword) {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("Username cannot be blank.");
         }
-        if (hashedPassword == null || hashedPassword.isBlank()) {
-            throw new IllegalArgumentException("Hashed password cannot be blank.");
+        if (rawPassword == null || rawPassword.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be blank.");
         }
         this.username = username;
-        this.hashedPassword = hashedPassword;
+        this.hashedPassword = hash(rawPassword);
         this.isSeller = false;
         this.balance = 0;
     }
 
-    public String getUsername() {
-        return username;
+    /**
+     * Returns a SHA-256 hex digest of the given input.
+     *
+     * @param input text to hash; must not be null.
+     * @return lowercase hex string of the digest.
+     */
+    static String hash(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is required by the Java platform specification and is always available.
+            throw new AssertionError("SHA-256 not available", e);
+        }
     }
 
-    public String getHashedPassword() {
-        return hashedPassword;
+    /**
+     * Returns {@code true} if the given raw password matches the stored hash.
+     *
+     * @param rawPassword plaintext password to verify; must not be null.
+     */
+    public boolean checkPassword(String rawPassword) {
+        return hashedPassword.equals(hash(rawPassword));
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public boolean isSeller() {
