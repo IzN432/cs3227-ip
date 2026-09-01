@@ -70,6 +70,9 @@ public abstract class Listing {
      * @param state new state.
      */
     public void setState(ListingState state) {
+        if (state == null) {
+            throw new IllegalArgumentException("Listing state cannot be null.");
+        }
         this.state = state;
     }
 

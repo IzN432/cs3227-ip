@@ -94,4 +94,13 @@ class UserStoreTest {
         store.add(bob());
         assertEquals(2, store.size());
     }
+
+    @Test
+    void remove_existingUser_removesAccount() {
+        UserStore store = new UserStore(List.of(alice()));
+
+        store.remove("alice");
+
+        assertFalse(store.contains("alice"));
+    }
 }

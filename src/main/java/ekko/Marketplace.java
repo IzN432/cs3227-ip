@@ -24,7 +24,7 @@ import ekko.users.UserStore;
 /**
  * Coordinates marketplace commands for a logged-in user.
  *
- * <p>Storage is not yet wired; all state is in-memory and resets on each launch.
+ * <p>The application owns persistence so this command layer remains focused on marketplace behavior.
  */
 public class Marketplace {
 

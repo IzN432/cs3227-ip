@@ -1,6 +1,13 @@
 package ekko;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -30,8 +37,14 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import ekko.conversation.ConversationMessage;
+import ekko.conversation.ConversationStorage;
+import ekko.conversation.ConversationStore;
+import ekko.listing.AuctionProcessor;
 import ekko.listing.ListingStore;
 import ekko.parser.Command;
+import ekko.storage.PersistenceCodec;
+import ekko.storage.Storage;
 import ekko.ui.GuiUi;
 import ekko.users.User;
 import ekko.users.UserStore;
@@ -41,8 +54,16 @@ import ekko.users.UserStore;
  */
 public class Main extends Application {
     private static final Duration RESPONSE_DELAY = Duration.millis(750);
+    private static final Path DATA_DIRECTORY = Path.of("data");
+    private static final Duration AUCTION_POLL_INTERVAL = Duration.seconds(1);
 
     private UserStore userStore;
+    private ListingStore listingStore;
+    private ConversationStore conversationStore;
+    private ConversationStorage conversationStorage;
+    private Storage<UserStore> userStorage;
+    private Storage<ListingStore> listingStorage;
+    private Timeline auctionTimeline;
 
     private VBox conversation;
     private ScrollPane conversationScroll;
@@ -59,13 +80,24 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        User defaultUser = new User("user", "password");
-        userStore = new UserStore(java.util.List.of(defaultUser));
-
         stage.setTitle("Ekko");
         stage.setOnHidden(event -> stopSession());
+        try {
+            loadApplicationState();
+        } catch (IOException | IllegalArgumentException e) {
+            showStartupFailure(stage, e);
+            return;
+        }
+        startAuctionProcessing();
         showLoginScene(stage);
         stage.show();
+    }
+
+    @Override
+    public void stop() {
+        if (auctionTimeline != null) {
+            auctionTimeline.stop();
+        }
     }
 
     /**
@@ -230,8 +262,15 @@ public class Main extends Application {
                 confirmField.requestFocus();
             } else {
                 User newUser = new User(username, password);
-                userStore.add(newUser);
-                showMarketplaceScene(stage, newUser);
+                try {
+                    conversationStorage.save(newUser, List.of());
+                    userStore.add(newUser);
+                    userStorage.save(userStore);
+                    showMarketplaceScene(stage, newUser);
+                } catch (IOException e) {
+                    userStore.remove(newUser.getUsername());
+                    errorLabel.setText("Could not save the new account: " + e.getMessage());
+                }
             }
         };
 
@@ -400,10 +439,12 @@ public class Main extends Application {
      * Initialises the marketplace session for the authenticated user.
      */
     private void startMarketplace(User user) {
-        GuiUi ui = new GuiUi(message -> appendMessage("Ekko", message),
-                message -> appendMessage("Error", message), () -> "yes");
         currentUser = user;
-        ListingStore listingStore = new ListingStore(java.util.List.of());
+        for (ConversationMessage message : conversationStore.getMessages(user.getUuid())) {
+            appendMessage(message.speaker(), message.text());
+        }
+        GuiUi ui = new GuiUi(message -> appendConversationMessage("Ekko", message),
+                message -> appendConversationMessage("Error", message), () -> "yes");
         marketplace = new Marketplace(ui, currentUser, userStore, listingStore);
         userLabel.setText(currentUser.getUsername());
         updateBalanceLabel();
@@ -422,7 +463,7 @@ public class Main extends Application {
         assert pendingReply == null : "An enabled command field must not have a pending reply";
         String command = input.getText();
         input.clear();
-        appendMessage("You", command);
+        appendConversationMessage("You", command);
         input.setDisable(true);
         send.setDisable(true);
         status.setText("PROCESSING COMMAND...");
@@ -443,7 +484,13 @@ public class Main extends Application {
         assert marketplace != null : "Delayed commands require a ready marketplace";
         // The submission lock must remain held throughout the delay and command execution.
         assert input.isDisabled() && send.isDisabled() : "Input must stay disabled until the reply completes";
-        if (marketplace.processCommand(command)) {
+        boolean shouldEnd = marketplace.processCommand(command);
+        try {
+            saveApplicationState();
+        } catch (IOException e) {
+            appendMessage("Error", "Could not save marketplace data: " + e.getMessage());
+        }
+        if (shouldEnd) {
             stopSession();
             return;
         }
@@ -489,10 +536,26 @@ public class Main extends Application {
     }
 
     /**
+     * Appends a visible message and persists it in the current user's conversation.
+     */
+    private void appendConversationMessage(String speaker, String message) {
+        appendMessage(speaker, message);
+        if (currentUser == null) {
+            return;
+        }
+        conversationStore.append(currentUser.getUuid(), speaker, message);
+        try {
+            saveConversation(currentUser);
+        } catch (IOException e) {
+            appendMessage("Error", "Could not save conversation history: " + e.getMessage());
+        }
+    }
+
+    /**
      * Updates the balance label to reflect the current user's coin balance.
      */
     private void updateBalanceLabel() {
-        balanceLabel.setText(currentUser.getBalance() + " coins");
+        balanceLabel.setText(currentUser.getBalance() + "\u2009coins");
     }
 
     /**
@@ -541,15 +604,97 @@ public class Main extends Application {
     }
 
     /**
-     * Requires explicit confirmation before deleting malformed saved data.
+     * Loads users, listings, and per-user conversations from disk.
      */
-    private String confirmRecovery(Stage stage) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                "Delete the invalid task file and start with an empty list? This cannot be undone.",
-                ButtonType.YES, ButtonType.NO);
-        alert.initOwner(stage);
-        alert.setTitle("Invalid saved tasks");
-        alert.setHeaderText("Ekko could not read the stored task data.");
-        return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES ? "yes" : "no";
+    private void loadApplicationState() throws IOException {
+        userStorage = new Storage<>(DATA_DIRECTORY.resolve("users.txt"),
+                PersistenceCodec::serializeUsers, PersistenceCodec::deserializeUsers);
+        listingStorage = new Storage<>(DATA_DIRECTORY.resolve("listings.txt"),
+                PersistenceCodec::serializeListings, PersistenceCodec::deserializeListings);
+        userStore = userStorage.load().orElseGet(() -> new UserStore(List.of()));
+        listingStore = listingStorage.load().orElseGet(() -> new ListingStore(List.of()));
+        conversationStore = new ConversationStore();
+        conversationStorage = new ConversationStorage(DATA_DIRECTORY.resolve("conversations"));
+        for (User user : userStore.asCollection()) {
+            List<ConversationMessage> messages = conversationStorage.load(user);
+            for (ConversationMessage message : messages) {
+                conversationStore.append(user.getUuid(), message.speaker(), message.text());
+            }
+        }
     }
+
+    /**
+     * Saves both shared marketplace stores.
+     */
+    private void saveApplicationState() throws IOException {
+        userStorage.save(userStore);
+        listingStorage.save(listingStore);
+    }
+
+    /**
+     * Saves one user's conversation to its UUID-named file.
+     */
+    private void saveConversation(User user) throws IOException {
+        conversationStorage.save(user, conversationStore.getMessages(user.getUuid()));
+    }
+
+    /**
+     * Periodically resolves auctions and persists notifications for affected users.
+     */
+    private void startAuctionProcessing() {
+        AuctionProcessor processor = new AuctionProcessor(listingStore, userStore);
+        auctionTimeline = new Timeline(new KeyFrame(AUCTION_POLL_INTERVAL,
+                event -> processExpiredAuctions(processor)));
+        auctionTimeline.setCycleCount(Timeline.INDEFINITE);
+        auctionTimeline.play();
+        processExpiredAuctions(processor);
+    }
+
+    /**
+     * Records auction notifications whether or not their recipients are logged in.
+     */
+    private void processExpiredAuctions(AuctionProcessor processor) {
+        Map<String, List<String>> notifications = processor.process();
+        if (notifications.isEmpty()) {
+            return;
+        }
+        try {
+            for (Map.Entry<String, List<String>> entry : notifications.entrySet()) {
+                User user = userStore.get(entry.getKey());
+                if (user == null) {
+                    continue;
+                }
+                for (String message : entry.getValue()) {
+                    conversationStore.append(user.getUuid(), "Ekko", message);
+                    if (currentUser != null && currentUser.getUuid().equals(user.getUuid())) {
+                        appendMessage("Ekko", message);
+                    }
+                }
+                saveConversation(user);
+            }
+            saveApplicationState();
+            if (currentUser != null) {
+                updateBalanceLabel();
+            }
+        } catch (IOException e) {
+            if (currentUser != null) {
+                appendMessage("Error", "Could not save auction notifications: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Reports an unreadable data file and stops startup without overwriting it.
+     */
+    private void showStartupFailure(Stage stage, Exception exception) {
+        Alert alert = new Alert(Alert.AlertType.ERROR,
+                "Ekko could not load its saved data. No files were changed.\n\n" + exception.getMessage(),
+                ButtonType.OK);
+        alert.initOwner(stage);
+        alert.setTitle("Saved data error");
+        alert.setHeaderText("Ekko could not start.");
+        alert.showAndWait();
+        Platform.exit();
+    }
+
 }

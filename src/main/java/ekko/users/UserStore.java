@@ -43,6 +43,15 @@ public class UserStore {
     }
 
     /**
+     * Removes a user after an account-creation operation fails to persist.
+     *
+     * @param username username to remove.
+     */
+    public void remove(String username) {
+        users.remove(username);
+    }
+
+    /**
      * Returns the user with the given username, or {@code null} if not found.
      *
      * @param username username to look up.

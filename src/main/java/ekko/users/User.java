@@ -3,6 +3,7 @@ package ekko.users;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.UUID;
 
 /**
  * Represents a registered user of the marketplace.
@@ -16,6 +17,7 @@ import java.util.HexFormat;
  */
 public class User {
 
+    private final String uuid;
     private final String username;
     /** SHA-256 hex digest of the password supplied at construction. */
     private final String hashedPassword;
@@ -33,16 +35,65 @@ public class User {
      * @throws IllegalArgumentException if either argument is null or blank.
      */
     public User(String username, String rawPassword) {
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("Username cannot be blank.");
+        this(UUID.randomUUID().toString(), requireUsername(username), hashRequiredPassword(rawPassword), false, 0);
+    }
+
+    /**
+     * Creates a user with fully specified validated state.
+     */
+    private User(String uuid, String username, String hashedPassword, boolean isSeller, long balance) {
+        this.uuid = uuid;
+        this.username = username;
+        this.hashedPassword = hashedPassword;
+        this.isSeller = isSeller;
+        this.balance = balance;
+    }
+
+    /**
+     * Reconstructs a user from trusted persisted fields.
+     *
+     * @param uuid stored user UUID.
+     * @param username stored username.
+     * @param hashedPassword stored SHA-256 password digest.
+     * @param isSeller stored seller status.
+     * @param balance stored coin balance.
+     * @return reconstructed user.
+     */
+    public static User fromPersisted(String uuid, String username, String hashedPassword,
+            boolean isSeller, long balance) {
+        try {
+            UUID.fromString(uuid);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new IllegalArgumentException("Stored user UUID is invalid.", e);
         }
+        requireUsername(username);
+        if (hashedPassword == null || !hashedPassword.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException("Stored password hash is invalid.");
+        }
+        if (balance < 0) {
+            throw new IllegalArgumentException("Balance cannot be negative.");
+        }
+        return new User(uuid, username, hashedPassword, isSeller, balance);
+    }
+
+    /**
+     * Validates and hashes a password supplied during registration.
+     */
+    private static String hashRequiredPassword(String rawPassword) {
         if (rawPassword == null || rawPassword.isBlank()) {
             throw new IllegalArgumentException("Password cannot be blank.");
         }
-        this.username = username;
-        this.hashedPassword = hash(rawPassword);
-        this.isSeller = false;
-        this.balance = 0;
+        return hash(rawPassword);
+    }
+
+    /**
+     * Returns a valid non-blank username.
+     */
+    private static String requireUsername(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username cannot be blank.");
+        }
+        return username;
     }
 
     /**
@@ -73,6 +124,20 @@ public class User {
 
     public String getUsername() {
         return username;
+    }
+
+    /**
+     * Returns the immutable identifier used for user-owned persisted data.
+     */
+    public String getUuid() {
+        return uuid;
+    }
+
+    /**
+     * Returns the password digest for persistence without exposing the raw password.
+     */
+    public String getHashedPassword() {
+        return hashedPassword;
     }
 
     public boolean isSeller() {
