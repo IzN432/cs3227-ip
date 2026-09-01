@@ -180,13 +180,13 @@ class MarketplaceTest {
     // --- list ---
 
     @Test
-    void processCommand_list_emptyStore_showsEmptyMessage() {
+    void list_emptyStore_showsEmptyMessage() {
         marketplace.processCommand("list");
         assertEquals("No active listings.", messages.get(0));
     }
 
     @Test
-    void processCommand_list_withListings_showsCountAndDetails() {
+    void list_withListings_showsCountAndDetails() {
         LocalDateTime future = LocalDateTime.now().plusHours(1);
         BinListing bin = new BinListing("b001", "user", "Lamp", "A nice lamp", 100);
         AuctionListing auction = new AuctionListing("a001", "seller2", "Watch", "A nice watch", 50, future);
@@ -219,7 +219,7 @@ class MarketplaceTest {
     // --- mylistings ---
 
     @Test
-    void processCommand_myListings_noListings_showsEmptyMessage() {
+    void myListings_noListings_showsEmptyMessage() {
         marketplace.processCommand("mylistings");
         assertEquals("You have no listings.", messages.get(0));
     }
@@ -326,14 +326,14 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bin_notSeller_showsError() {
+    void bin_notSeller_showsError() {
         marketplace.processCommand("bin Lamp /desc A nice lamp /price 100");
         assertTrue(errors.get(0).contains("becomeseller"), errors.get(0));
         assertTrue(listingStore().isEmpty());
     }
 
     @Test
-    void processCommand_bin_missingName_showsError() {
+    void bin_missingName_showsError() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("bin /desc A lamp /price 100");
         assertFalse(errors.isEmpty());
@@ -341,7 +341,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bin_missingDesc_mentionsSlashDesc() {
+    void bin_missingDesc_mentionsSlashDesc() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("bin Lamp /price 100");
         assertTrue(errors.get(0).contains("/desc"), errors.get(0));
@@ -349,7 +349,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bin_missingPrice_mentionsSlashPrice() {
+    void bin_missingPrice_mentionsSlashPrice() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("bin Lamp /desc A lamp");
         assertTrue(errors.get(0).contains("/price"), errors.get(0));
@@ -357,7 +357,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bin_invalidPrice_showsError() {
+    void bin_invalidPrice_showsError() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("bin Lamp /desc A lamp /price free");
         assertFalse(errors.isEmpty());
@@ -378,13 +378,13 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_auction_notSeller_showsError() {
+    void auction_notSeller_showsError() {
         marketplace.processCommand("auction Watch /desc desc /price 50 /end 2099-01-01 1200");
         assertFalse(errors.isEmpty());
     }
 
     @Test
-    void processCommand_auction_missingEnd_mentionsSlashEnd() {
+    void auction_missingEnd_mentionsSlashEnd() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("auction Watch /desc desc /price 50");
         assertTrue(errors.get(0).contains("/end"), errors.get(0));
@@ -392,7 +392,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_auction_invalidEndFormat_showsError() {
+    void auction_invalidEndFormat_showsError() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("auction Watch /desc desc /price 50 /end notadate");
         assertFalse(errors.isEmpty());
@@ -400,7 +400,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_auction_dateOnlyEndTime_showsError() {
+    void auction_dateOnlyEndTime_showsError() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("auction Watch /desc desc /price 50 /end 2099-01-01");
         assertTrue(errors.get(0).contains("time"), errors.get(0));
@@ -408,7 +408,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_auction_pastEndTime_showsError() {
+    void auction_pastEndTime_showsError() {
         marketplace.processCommand("becomeseller");
         marketplace.processCommand("auction Watch /desc desc /price 50 /end 2000-01-01 1200");
         assertTrue(errors.get(0).contains("future"), errors.get(0));
@@ -423,7 +423,7 @@ class MarketplaceTest {
     // --- find ---
 
     @Test
-    void processCommand_find_matchingKeyword_showsResults() {
+    void find_matchingKeyword_showsResults() {
         BinListing lamp = new BinListing("b001", "seller", "Vintage Lamp", "Great condition", 100);
         BinListing table = new BinListing("b002", "seller", "Oak Table", "Solid wood", 200);
         Marketplace mp = marketplaceWith(List.of(lamp, table));
@@ -446,7 +446,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_find_noMatch_showsEmptyMessage() {
+    void find_noMatch_showsEmptyMessage() {
         BinListing listing = new BinListing("b001", "seller", "Lamp", "desc", 100);
         Marketplace mp = marketplaceWith(List.of(listing));
 
@@ -456,7 +456,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_find_withPriceRange_filtersResults() {
+    void find_withPriceRange_filtersResults() {
         BinListing cheap = new BinListing("b001", "seller", "Lamp", "desc", 50);
         BinListing expensive = new BinListing("b002", "seller", "Lamp", "desc", 500);
         Marketplace mp = marketplaceWith(List.of(cheap, expensive));
@@ -469,7 +469,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_find_lowOnlyBound_excludesCheaper() {
+    void find_lowOnlyBound_excludesCheaper() {
         BinListing cheap = new BinListing("b001", "seller", "Lamp", "desc", 50);
         BinListing expensive = new BinListing("b002", "seller", "Lamp", "desc", 500);
         Marketplace mp = marketplaceWith(List.of(cheap, expensive));
@@ -481,14 +481,14 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_find_invertedPriceRange_showsError() {
+    void find_invertedPriceRange_showsError() {
         Marketplace mp = marketplaceWith(List.of());
         mp.processCommand("find Lamp /low 200 /high 100");
         assertFalse(errors.isEmpty());
     }
 
     @Test
-    void processCommand_find_missingKeyword_showsError() {
+    void find_missingKeyword_showsError() {
         marketplace.processCommand("find");
         assertFalse(errors.isEmpty());
     }
@@ -535,7 +535,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_buy_insufficientFunds_showsErrorAndLeavesListingActive() {
+    void buy_insufficientFunds_showsErrorAndLeavesListingActive() {
         BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
         User buyer = new User("user", "password");
         buyer.addBalance(50);
@@ -551,7 +551,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_buy_ownListing_showsError() {
+    void buy_ownListing_showsError() {
         BinListing bin = new BinListing("b001", "user", "Lamp", "desc", 100);
         User buyer = new User("user", "password");
         buyer.addBalance(200);
@@ -566,7 +566,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_buy_alreadySoldListing_showsError() {
+    void buy_alreadySoldListing_showsError() {
         BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
         bin.setState(ListingState.SOLD);
         User buyer = new User("user", "password");
@@ -582,7 +582,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_buy_onAuctionListing_showsError() {
+    void buy_onAuctionListing_showsError() {
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
                 LocalDateTime.now().plusHours(1));
         User buyer = new User("user", "password");
@@ -597,7 +597,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_buy_unknownUuid_showsError() {
+    void buy_unknownUuid_showsError() {
         User buyer = new User("user", "password");
         buyer.addBalance(200);
         Marketplace mp = new Marketplace(captureUi(), buyer,
@@ -741,7 +741,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_refundExceedsIntegerMaximum_preservesFullBalance() {
+    void bid_refundExceedsIntegerMaximum_preservesFullBalance() {
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
                 LocalDateTime.now().plusHours(1));
         auction.setHighestBid(new Bid("other", 100));
@@ -760,7 +760,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_currentBidAtLongMaximum_showsErrorWithoutChangingBalances() {
+    void bid_currentBidAtLongMaximum_showsErrorWithoutChangingBalances() {
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
                 LocalDateTime.now().plusHours(1));
         auction.setHighestBid(new Bid("other", Long.MAX_VALUE));
@@ -779,7 +779,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_refundWouldOverflow_rejectsBidWithoutDeductingFunds() {
+    void bid_refundWouldOverflow_rejectsBidWithoutDeductingFunds() {
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50,
                 LocalDateTime.now().plusHours(1));
         auction.setHighestBid(new Bid("other", 100));
@@ -800,7 +800,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_amountBelowMinimum_showsError() {
+    void bid_amountBelowMinimum_showsError() {
         LocalDateTime future = LocalDateTime.now().plusHours(1);
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
         User bidder = new User("user", "password");
@@ -818,7 +818,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_insufficientFunds_showsError() {
+    void bid_insufficientFunds_showsError() {
         LocalDateTime future = LocalDateTime.now().plusHours(1);
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
         User bidder = new User("user", "password");
@@ -835,7 +835,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_alreadyHighestBidder_showsError() {
+    void bid_alreadyHighestBidder_showsError() {
         LocalDateTime future = LocalDateTime.now().plusHours(1);
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
         auction.setHighestBid(new Bid("user", 60));
@@ -853,7 +853,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_expiredAuction_showsError() {
+    void bid_expiredAuction_showsError() {
         AuctionListing expired = new AuctionListing("a001", "seller", "Watch", "desc", 50,
                 LocalDateTime.now().minusHours(1));
         User bidder = new User("user", "password");
@@ -870,7 +870,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_onBinListing_showsError() {
+    void bid_onBinListing_showsError() {
         BinListing bin = new BinListing("b001", "seller", "Lamp", "desc", 100);
         User bidder = new User("user", "password");
         bidder.addBalance(200);
@@ -884,7 +884,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_unknownUuid_showsError() {
+    void bid_unknownUuid_showsError() {
         User bidder = new User("user", "password");
         bidder.addBalance(200);
         Marketplace mp = new Marketplace(captureUi(), bidder,
@@ -897,7 +897,7 @@ class MarketplaceTest {
     }
 
     @Test
-    void processCommand_bid_missingPrice_showsError() {
+    void bid_missingPrice_showsError() {
         LocalDateTime future = LocalDateTime.now().plusHours(1);
         AuctionListing auction = new AuctionListing("a001", "seller", "Watch", "desc", 50, future);
         User bidder = new User("user", "password");

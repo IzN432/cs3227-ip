@@ -123,11 +123,10 @@ class PersistenceCodecTest {
         assertEquals(user.getUuid(), restoredUsers.get("ali" + delimiter + "ce").getUuid());
         assertEquals("sell" + delimiter + "er",
                 restoredListings.get("bin" + delimiter + "1").getOwnerUsername());
-        assertEquals("buy" + delimiter + "er",
-                ((BinListing) restoredListings.get("bin" + delimiter + "1")).getBuyerUsername());
-        assertEquals("bid" + delimiter + "der",
-                ((AuctionListing) restoredListings.get("auc" + delimiter + "1"))
-                        .getHighestBid().getBidderUsername());
+        BinListing restoredBin = (BinListing) restoredListings.get("bin" + delimiter + "1");
+        AuctionListing restoredAuction = (AuctionListing) restoredListings.get("auc" + delimiter + "1");
+        assertEquals("buy" + delimiter + "er", restoredBin.getBuyerUsername());
+        assertEquals("bid" + delimiter + "der", restoredAuction.getHighestBid().getBidderUsername());
         assertEquals(messages, restoredMessages);
     }
 }
