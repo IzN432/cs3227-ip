@@ -61,6 +61,7 @@ public class Marketplace {
             case BALANCE -> showBalance();
             case BECOMESELLER -> becomeSeller();
             case TOPUP -> topUp(arguments);
+            case WITHDRAW -> withdraw(arguments);
             case BYE -> {
                 return true;
             }
@@ -79,6 +80,21 @@ public class Marketplace {
         int amount = parsePositiveInt(arguments, "top-up amount");
         currentUser.addBalance(amount);
         ui.showMessage("Topped up " + amount + " coins. Balance: " + currentUser.getBalance() + " coins.");
+    }
+
+    /**
+     * Deducts coins from the current user's balance.
+     *
+     * @param arguments raw argument text containing the amount.
+     * @throws AppException if the amount is missing, not a whole number, not positive,
+     *         or exceeds the current balance.
+     */
+    private void withdraw(String arguments) throws AppException {
+        int amount = parsePositiveInt(arguments, "withdrawal amount");
+        if (!currentUser.deductBalance(amount)) {
+            throw new AppException("Insufficient balance. You have " + currentUser.getBalance() + " coins.");
+        }
+        ui.showMessage("Withdrew " + amount + " coins. Balance: " + currentUser.getBalance() + " coins.");
     }
 
     /**

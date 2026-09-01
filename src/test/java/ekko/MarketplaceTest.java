@@ -122,6 +122,53 @@ class MarketplaceTest {
         assertEquals(0, user.getBalance());
     }
 
+    // --- withdraw ---
+
+    @Test
+    void processCommand_withdraw_deductsAmountAndConfirms() {
+        marketplace.processCommand("topup 200");
+        marketplace.processCommand("withdraw 75");
+        assertEquals(125, user.getBalance());
+        assertEquals("Withdrew 75 coins. Balance: 125 coins.", messages.get(1));
+    }
+
+    @Test
+    void processCommand_withdrawExactBalance_leavesZero() {
+        marketplace.processCommand("topup 100");
+        marketplace.processCommand("withdraw 100");
+        assertEquals(0, user.getBalance());
+        assertEquals("Withdrew 100 coins. Balance: 0 coins.", messages.get(1));
+    }
+
+    @Test
+    void processCommand_withdrawInsufficientFunds_showsError() {
+        marketplace.processCommand("topup 50");
+        marketplace.processCommand("withdraw 51");
+        assertEquals(50, user.getBalance());
+        assertEquals("Insufficient balance. You have 50 coins.", errors.get(0));
+    }
+
+    @Test
+    void processCommand_withdrawMissingAmount_showsError() {
+        marketplace.processCommand("withdraw");
+        assertEquals("Please provide a withdrawal amount.", errors.get(0));
+    }
+
+    @Test
+    void processCommand_withdrawNonInteger_showsError() {
+        marketplace.processCommand("withdraw abc");
+        assertEquals("The withdrawal amount must be a whole number.", errors.get(0));
+    }
+
+    @Test
+    void processCommand_withdrawZeroOrNegative_showsError() {
+        for (String input : new String[] {"withdraw 0", "withdraw -10"}) {
+            errors.clear();
+            marketplace.processCommand(input);
+            assertEquals("The withdrawal amount must be positive.", errors.get(0), input);
+        }
+    }
+
     // --- becomeseller ---
 
     @Test
